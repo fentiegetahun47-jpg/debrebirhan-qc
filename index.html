@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debre Birhan Wood Processing PLC - Quality Control MIS (QC-MIS)</title>
+  
+  <!-- Mobile & PWA Shortcut Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="QC-MIS">
+  <meta name="theme-color" content="#030712">
+
+  <!-- Firebase Authentication & Cloud Database SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --cyan-glow: #22d3ee;
+      --cyan-border: #0284c7;
+      --success: #16a34a;
+      --warning: #f59e0b;
+      --danger: #dc2626;
+      --bg: #090e17;
+      --card: #0f172a;
+      --card-border: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --db-color: #06b6d4;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    body { 
+      background: radial-gradient(circle at 50% 0%, #0d1e38 0%, #060a12 60%, #030508 100%);
+      color: var(--text); 
+      padding: 16px; 
+      max-width: 1200px; 
+      margin: 0 auto; 
+      min-height: 100vh;
+    }
+
+    /* TOP BAR & LANGUAGE SELECTOR */
+    .top-nav {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+    .lang-dropdown-wrapper {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      border: 1px solid #0284c7;
+      padding: 6px 14px;
+      border-radius: 999px;
+      box-shadow: 0 0 15px rgba(2, 132, 199, 0.25);
+    }
+    .lang-select {
+      background: transparent;
+      color: #38bdf8;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      outline: none;
+      cursor: pointer;
+    }
+    .lang-select option {
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    /* HERO BANNER */
+    .hero-banner {
+      position: relative;
+      background: radial-gradient(circle at 50% 90%, rgba(14, 165, 233, 0.22) 0%, rgba(3, 7, 18, 0.95) 75%),
+                  linear-gradient(90deg, #18110b 0%, transparent 15%, transparent 85%, #18110b 100%);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 20px;
+      padding: 40px 20px;
+      text-align: center;
+      margin-bottom: 24px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px -10px rgba(14, 165, 233, 0.4), inset 0 0 60px rgba(2, 132, 199, 0.15);
+    }
+    .hero-company {
+      font-size: 0.95rem;
+      letter-spacing: 1.5px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .hero-title {
+      font-size: clamp(1.4rem, 4vw, 2.35rem);
+      font-weight: 800;
+      line-height: 1.35;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .text-white { color: #ffffff; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+    .text-cyan {
+      color: #22d3ee;
+      text-shadow: 0 0 25px rgba(34, 211, 238, 0.75), 0 0 45px rgba(14, 165, 233, 0.45);
+    }
+    .hero-pill {
+      display: inline-block;
+      padding: 6px 36px;
+      border: 2px solid #0284c7;
+      border-radius: 999px;
+      color: #38bdf8;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      background: rgba(2, 132, 199, 0.12);
+      box-shadow: 0 0 20px rgba(14, 165, 233, 0.3), inset 0 0 10px rgba(34, 211, 238, 0.15);
+      position: relative;
+    }
+
+    /* Buttons */
+    .btn-group { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+    button { cursor: pointer; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--card-border); font-size: 0.92rem; font-weight: 500; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: #0284c7; color: white; border: none; box-shadow: 0 0 15px rgba(2, 132, 199, 0.4); }
+    .btn-primary:hover:not(:disabled) { background: #0369a1; }
+    .btn-outline { background: #1e293b; color: #f8fafc; border-color: #334155; }
+    .btn-outline:hover:not(:disabled) { background: #334155; }
+    .btn-danger { background: #450a0a; color: #fca5a5; border-color: #7f1d1d; }
+    .btn-danger:hover:not(:disabled) { background: #7f1d1d; color: white; }
+    .btn-db { background: #0e7490; color: white; border: none; }
+    .btn-db:hover { background: #155e75; }
+    .btn-report { background: #065f46; color: #a7f3d0; border: 1px solid #059669; padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; }
+    .btn-report:hover { background: #047857; color: white; }
+
+    button:disabled {
+      opacity: 0.4 !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+    }
+
+    /* Cards */
+    .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 22px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); }
+    .card-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 12px; color: #f8fafc; display: flex; align-items: center; gap: 8px; }
+    .card-subtitle { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 15px; line-height: 1.5; }
+
+    /* Tables */
+    .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid var(--card-border); background: #0b1120; }
+    table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.9rem; min-width: 620px; color: #e2e8f0; }
+    th { background: #1e293b; color: #93c5fd; padding: 10px 8px; border-bottom: 1px solid #334155; font-weight: 600; }
+    td { padding: 9px 8px; border-bottom: 1px solid #1e293b; }
+    tr:last-child td { border-bottom: none; }
+    input[type="number"] { width: 100%; padding: 6px 8px; background: #0b1120; border: 1px solid #334155; color: #f8fafc; border-radius: 6px; text-align: center; font-size: 0.9rem; }
+    input[type="number"]:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.4); }
+    input[type="number"]:disabled {
+      background: #1e293b !important;
+      color: #94a3b8 !important;
+      border-color: #334155 !important;
+      cursor: not-allowed !important;
+    }
+
+    /* Metrics Grid */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .metric-box { background: #0b1120; border: 1px solid #1e293b; padding: 14px; border-radius: 8px; text-align: center; }
+    .metric-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
+    .metric-value { font-size: 1.22rem; font-weight: 700; color: #f8fafc; }
+
+    /* Alerts */
+    .alert { padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; font-size: 0.92rem; line-height: 1.5; }
+    .alert-success { background: #064e3b; border: 1px solid #059669; color: #a7f3d0; }
+    .alert-warning { background: #713f12; border: 1px solid #d97706; color: #fde68a; }
+    .alert-danger { background: #7f1d1d; border: 1px solid #dc2626; color: #fecaca; }
+    .alert-info { background: #0c4a6e; border: 1px solid #0284c7; color: #bae6fd; }
+
+    /* SQL Box */
+    .sql-code-box { background: #020617; color: #38bdf8; padding: 16px; border-radius: 8px; font-family: "Courier New", Courier, monospace; font-size: 0.85rem; line-height: 1.6; overflow-x: auto; margin: 12px 0; border: 1px solid #1e293b; }
+    .sql-keyword { color: #f43f5e; font-weight: bold; }
+    .sql-type { color: #34d399; }
+    .sql-table { color: #fbbf24; }
+
+    .chart-container { width: 100%; overflow-x: auto; background: #020617; border-radius: 10px; padding: 12px 0; border: 1px solid #1e293b; }
+    svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+
+    /* Account Center */
+    .account-center { border: 1px solid rgba(56, 189, 248, 0.4); background: linear-gradient(135deg, #0b1329 0%, #0f172a 100%); }
+    .account-grid { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(280px, 1fr); gap: 18px; align-items: start; }
+    .account-box { background: #080e1e; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; }
+    .account-input { width: 100%; padding: 10px 12px; background: #020617; color: #fff; border: 1px solid #334155; border-radius: 8px; margin: 6px 0 10px; font-size: .92rem; }
+    .account-status { padding: 10px 12px; border-radius: 8px; margin-top: 10px; font-size: .9rem; font-weight: 500; }
+    .account-online { background: #064e3b; color: #a7f3d0; border: 1px solid #059669; }
+    .account-offline { background: #713f12; color: #fde68a; border: 1px solid #b45309; }
+    .user-pill { display: inline-flex; align-items: center; gap: 7px; background: rgba(2, 132, 199, 0.2); color: #38bdf8; border: 1px solid #0284c7; border-radius: 999px; padding: 6px 14px; font-size: .88rem; font-weight: 700; }
+    .btn-google { background: #ffffff; color: #0f172a; border: none; width: 100%; justify-content: center; font-weight: 600; }
+    .btn-google:hover { background: #e2e8f0; }
+    .btn-account { background: #1e293b; color: #fff; border: 1px solid #334155; }
+    .danger-outline { background: transparent; color: #f87171; border: 1px solid #7f1d1d; }
+
+    /* MODAL DOCUMENT */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+    }
+    .modal-card {
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 820px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 30px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+      position: relative;
+    }
+    .modal-header {
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .modal-close {
+      background: #e2e8f0;
+      color: #0f172a;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .doc-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      text-align: left;
+      color: #1e293b;
+    }
+    .doc-table th, .doc-table td {
+      border: 1px solid #cbd5e1;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+    }
+    .doc-table th { background: #f1f5f9; color: #0f172a; font-weight: 600; }
+    .doc-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
+
+    @media print {
+      body * { visibility: hidden; }
+      .modal-card, .modal-card * { visibility: visible; }
+      .modal-card { position: absolute; left: 0; top: 0; width: 100%; max-width: 100%; box-shadow: none; padding: 0; }
+      .no-print { display: none !important; }
+    }
+
+    @media(max-width:760px){ 
+      .account-grid{ grid-template-columns: 1fr; }
+      .modal-card { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== 🌐 LANGUAGE SELECTION BAR ==================== -->
+  <div class="top-nav">
+    <div class="lang-dropdown-wrapper">
+      <span style="font-size: 1.1rem;">🌐</span>
+      <select id="langSelect" class="lang-select" onchange="changeLanguage(this.value)">
+        <option value="en">English (US)</option>
+        <option value="am" selected>አማርኛ (Amharic)</option>
+        <option value="om">Afaan Oromoo</option>
+        <option value="ti">ትግርኛ (Tigrinya)</option>
+        <option value="so">Soomaali (Somali)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- HERO BANNER -->
+  <header class="hero-banner">
+    <div class="hero-company" data-i18n="companyName">🪵 ደብረ ብርሃን የእንጨት ማቀነባበሪያ ኃ/የተ/የግ/ማህበር</div>
+    <h1 class="hero-title">
+      <span class="text-white" data-i18n="titlePart1">በድረ-ገጽ የተመሰረተ የማኑፋክቸሪንግ</span>
+      <span class="text-cyan" data-i18n="titlePart2">የጥራት ቁጥጥር ማኔጅመንት</span>
+      <span class="text-white" data-i18n="titlePart3">ኢንፎርሜሽን ሲስተም</span>
+    </h1>
+    <div class="hero-pill">(QC-MIS)</div>
+  </header>
+
+  <!-- 1. QC-MIS ACCOUNT CENTER & ROLE-BASED ACCESS CONTROL -->
+  <div class="card account-center">
+    <div class="card-title" data-i18n="accountTitle">🔐 የዳታቤዝ ደህንነት እና የተጠቃሚዎች ፈቃድ ደረጃ (RBAC)</div>
+    <div class="card-subtitle" data-i18n="accountSubtitle">
+      የዳታቤዝ ደህንነት ፍልስፍና (Slide 25)፦ የጥራት ሰራተኛው አዳዲስ ዳታዎችን የማስገባትና የመቀየር ስልጣን ሲኖረው፤ የፋብሪካው አመራሮችና ባለሀብቱ ግን የማየት ብቻ ፈቃድ (Read-Only) አላቸው።
+    </div>
+    <div class="account-grid">
+      <!-- Account Box -->
+      <div class="account-box">
+        <div id="accountSignedOut">
+          <button class="btn-google" onclick="qcGoogleLogin()" data-i18n="googleBtn">🌐 በ Google ይቀጥሉ</button>
+          <div style="text-align:center;color:#64748b;margin:8px 0;font-size:0.85rem;" data-i18n="orEmail">— ወይም በ Email —</div>
+          <input id="qcEmail" class="account-input" type="email" autocomplete="email" placeholder="Email Address">
+          <input id="qcPassword" class="account-input" type="password" autocomplete="current-password" placeholder="Password (6+ chars)">
+          <div style="display:flex;align-items:center;gap:8px;margin:5px 0 10px;font-size:.85rem;color:#94a3b8;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input id="qcShowPassword" type="checkbox" onchange="qcTogglePassword()"> <span data-i18n="showPwd">የይለፍ ቃል አሳይ</span>
+            </label>
+            <button type="button" onclick="qcForgotPassword()" style="margin-left:auto;border:0;background:none;color:#38bdf8;cursor:pointer;font-weight:600;font-size:0.85rem;" data-i18n="forgotPwd">የይለፍ ቃል ረሳህ?</button>
+          </div>
+          <div class="btn-group" style="margin:4px 0 0;">
+            <button class="btn-primary" onclick="qcEmailLogin()" data-i18n="signInBtn">🔑 ግባ (Sign In)</button>
+            <button class="btn-outline" onclick="qcEmailSignup()" data-i18n="createAccBtn">➕ አዲስ አካውንት ፍጠር</button>
+          </div>
+        </div>
+        <div id="accountSignedIn" style="display:none;">
+          <div class="user-pill" id="qcUserPill">👤 Logged In</div>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-account" onclick="qcLogout()" data-i18n="signOutBtn">↪️ ውጣ (Sign Out)</button>
+            <button class="danger-outline" onclick="qcDeleteAccount()" data-i18n="deleteAccBtn">🗑️ አካውንት ሰርዝ</button>
+          </div>
+        </div>
+
+        <!-- 🛡️ ROLE SELECTOR (AUTHORIZATION LEVEL) -->
+        <div style="margin-top: 16px; border-top: 1px solid #1e293b; padding-top: 12px;">
+          <label style="font-size:0.85rem; color:#93c5fd; font-weight:700; display:flex; align-items:center; gap:6px;" data-i18n="roleLabel">
+            🛡️ የተጠቃሚ ፈቃድ ደረጃ (System User Role):
+          </label>
+          <select id="qcUserRoleSelect" class="account-input" style="margin-top:6px; font-weight:600;" onchange="setUserRole(this.value)">
+            <option value="inspector" selected data-i18n="roleInspector">👑 የጥራት መሀንዲስ / Inspector (Full Access & Edit)</option>
+            <option value="viewer" data-i18n="roleViewer">👔 የፋብሪካ ባለሀብት / Management (View-Only / ማየት ብቻ)</option>
+          </select>
+          <div style="font-size:0.75rem; color:#64748b;">
+            SQL Rule: <code>GRANT SELECT, UPDATE TO Inspector; REVOKE UPDATE FROM Management;</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sync Box -->
+      <div class="account-box">
+        <strong data-i18n="syncTitle">☁️ ክላውድ ዳታቤዝ (Firebase) ሁኔታ</strong>
+        <div id="qcAccountStatus" class="account-status account-offline">⚪ Initializing Database…</div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-outline" onclick="qcSyncNow()" data-i18n="syncNowBtn">🔄 አሁን አመሳስል (Sync DB)</button>
+          <button class="danger-outline" id="btnClearLocal" onclick="qcClearMyLocalData()" data-i18n="clearLocalBtn">🗑️ የብሮውዘር ዳታ አጽዳ</button>
+        </div>
+        <div style="font-size:.78rem;color:#94a3b8;margin-top:10px;line-height:1.5;" data-i18n="dbApproachDesc">
+          <strong>Database Approach (Slide 18)፦</strong> መረጃዎች በአንድ ማዕከላዊ ክላውድ ዳታቤዝ ውስጥ ይቀመጣሉ። ብዙ ተጠቃሚዎች በአንድ ጊዜ እውነተኛውን መረጃ ያለምንም ቅራኔ ይመለከታሉ።
+        </div>
+      </div>
+    </div>
+    <div id="qcAuthMessage" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- ROLE NOTICE BANNER -->
+  <div id="roleNoticeBanner" class="alert alert-info"></div>
+
+  <!-- 2. DATA ENTRY & CONTROLS -->
+  <div class="card">
+    <div class="btn-group">
+      <button class="btn-outline" id="btnBaseline" onclick="loadBaselineData()" data-i18n="loadBaselineBtn">📥 የፋብሪካውን መነሻ ዳታ ጫን (Baseline Data)</button>
+      <button class="btn-danger" id="btnClearData" onclick="clearData()" data-i18n="clearDataBtn">🗑️ ሁሉንም ዳታ አጽዳ</button>
+    </div>
+
+    <div style="margin: 15px 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <label for="sampleCountInput" style="font-weight: 600; color: #93c5fd;" data-i18n="sampleCountLabel">የሚሞሉ የሳምፕል ብዛት (1-50):</label>
+      <input type="number" id="sampleCountInput" min="1" max="50" value="15" style="width: 80px;" onchange="changeSampleCount()">
+      <span style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="sampleHint">(ሙሉ 5 መለኪያዎች የተሞሉባቸው ብቻ ይሰላሉ)</span>
+    </div>
+
+    <div class="table-responsive">
+      <table id="inputTable">
+        <thead>
+          <tr>
+            <th style="width: 80px;" data-i18n="thSample">ሳምፕል #</th>
+            <th>X1 (mm)</th>
+            <th>X2 (mm)</th>
+            <th>X3 (mm)</th>
+            <th>X4 (mm)</th>
+            <th>X5 (mm)</th>
+          </tr>
+        </thead>
+        <tbody id="inputTableBody"></tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 15px;">
+      <button class="btn-primary" id="btnCalculate" onclick="calculateSystem()" data-i18n="calculateBtn">💾 አስላና ዳታቤዝ አድስ (Calculate & Commit)</button>
+    </div>
+  </div>
+
+  <div id="statusAlert"></div>
+
+  <!-- 3. RESULTS & SPC CHARTS SECTION -->
+  <div id="resultsSection" style="display: none;">
+    
+    <div class="card">
+      <div class="card-title" data-i18n="chartsTitle">📊 የቁጥጥር ግራፎች (X̄ & R Control Charts)</div>
+      <div id="xbarCaption" class="card-subtitle"></div>
+      <div class="chart-container" id="xbarChartSvg"></div>
+      
+      <div id="rCaption" class="card-subtitle" style="margin-top: 20px;"></div>
+      <div class="chart-container" id="rChartSvg"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-i18n="limitsTitle">🎯 የቁጥጥር ወሰኖች እና የሂደት ብቃት (Limits & Capability)</div>
+      <div class="metrics-grid">
+        <div class="metric-box">
+          <div class="metric-label" data-i18n="lblUclX">UCL_X̄ (የላይኛው ወሰን)</div>
+          <div class="metric-value" id="val_ucl_x">-</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label" data-i18n="lblLclX">LCL_X̄ (የታችኛው ወሰን)</div>
+          <div class="metric-value" id="val_lcl_x">-</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label" data-i18n="lblUclR">UCL_R (የ R የላይኛው)</div>
+          <div class="metric-value" id="val_ucl_r">-</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label" data-i18n="lblLclR">LCL_R (የ R የታችኛው)</div>
+          <div class="metric-value" id="val_lcl_r">-</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label" data-i18n="lblCp">የሂደት ብቃት (Cp)</div>
+          <div class="metric-value" id="val_cp" style="color: #38bdf8;">-</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label" data-i18n="lblCpk">ትክክለኛ ብቃት (Cpk)</div>
+          <div class="metric-value" id="val_cpk" style="color: var(--warning);">-</div>
+        </div>
+      </div>
+
+      <!-- TWO-SIDED DYNAMIC ALERT BOX -->
+      <div id="managerAlertBox"></div>
+    </div>
+
+    <!-- 4. DATABASE & SQL MANAGEMENT -->
+    <div class="card" style="border: 1px solid var(--db-color);">
+      <div class="card-title" style="color: var(--db-color);" data-i18n="dbSectionTitle">
+        🗄️ የዳታቤዝ ማኔጅመንት እና SQL ስኪማ (DBMS)
+      </div>
+      <div class="card-subtitle" data-i18n="dbSectionSubtitle">
+        ይህ ክፍል መረጃዎች በምን አይነት ሪሌሽናል ዳታቤዝ ሰንጠረዥ እና SQL Queries እንደተቀመጡ ያሳያል።
+      </div>
+
+      <div class="btn-group">
+        <button class="btn-db" onclick="downloadSQL()" data-i18n="downloadSqlBtn">📥 ዳታቤዝ አውርድ (.sql File)</button>
+        <button class="btn-outline" onclick="downloadCSV()" data-i18n="exportCsvBtn">📄 ወደ CSV ላክ (.csv)</button>
+      </div>
+
+      <div style="font-weight: 600; margin-top: 15px; font-size: 0.95rem; color: #93c5fd;" data-i18n="dbSchemaTitle">1. የዳታቤዝ ሰንጠረዥ ቅርጽ (Table Schema):</div>
+      <div class="sql-code-box">
+<span class="sql-keyword">CREATE TABLE IF NOT EXISTS</span> <span class="sql-table">spc_samples</span> (
+    <span class="sql-type">subgroup_no</span> <span class="sql-keyword">INTEGER PRIMARY KEY</span>,  <span style="color:#64748b;">-- የናሙና መለያ ቁጥር (Unique ID)</span>
+    <span class="sql-type">x1</span> <span class="sql-keyword">REAL NOT NULL</span>,                 <span style="color:#64748b;">-- መለኪያ 1</span>
+    <span class="sql-type">x2</span> <span class="sql-keyword">REAL NOT NULL</span>,                 <span style="color:#64748b;">-- መለኪያ 2</span>
+    <span class="sql-type">x3</span> <span class="sql-keyword">REAL NOT NULL</span>,                 <span style="color:#64748b;">-- መለኪያ 3</span>
+    <span class="sql-type">x4</span> <span class="sql-keyword">REAL NOT NULL</span>,                 <span style="color:#64748b;">-- መለኪያ 4</span>
+    <span class="sql-type">x5</span> <span class="sql-keyword">REAL NOT NULL</span>,                 <span style="color:#64748b;">-- መለኪያ 5</span>
+    <span class="sql-type">mean_x</span> <span class="sql-keyword">REAL NOT NULL</span>,             <span style="color:#64748b;">-- አማካይ ውፍረት (Mean)</span>
+    <span class="sql-type">range_r</span> <span class="sql-keyword">REAL NOT NULL</span>             <span style="color:#64748b;">-- ልዩነት (Range)</span>
+);
+      </div>
+
+      <div style="font-weight: 600; margin-top: 15px; font-size: 0.95rem; color: #93c5fd;" data-i18n="dbLiveTitle">2. በአሁኑ ሰዓት በዳታቤዙ የተመዘገቡ ሪከርዶች:</div>
+      <div class="table-responsive" style="margin-top: 8px;">
+        <table>
+          <thead>
+            <tr style="background: #082f49;">
+              <th>PK (subgroup_no)</th>
+              <th>x1 (REAL)</th>
+              <th>x2 (REAL)</th>
+              <th>x3 (REAL)</th>
+              <th>x4 (REAL)</th>
+              <th>x5 (REAL)</th>
+              <th>mean_x (REAL)</th>
+              <th>range_r (REAL)</th>
+            </tr>
+          </thead>
+          <tbody id="dbLiveTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 5. HISTOGRAM & FREQUENCY TABLE -->
+    <div class="card">
+      <div class="card-title" data-i18n="histTitle">📊 3. የውፍረት ስርጭት ሂስቶግራም (Histogram)</div>
+      <div class="card-subtitle" data-i18n="histSubtitle">ልክ በፕሮጀክት ሪፖርቱ ገጽ 21 መሰረት አሞሌዎቹ የተያያዙና ባለ ብዙ ቀለም ሆነው የቀረቡ</div>
+      <div class="chart-container" id="histogramSvg"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-i18n="freqTableTitle">📋 ሰንጠረዥ 1. የ 18 ሚ.ሜ ፕላይዉድ ውፍረት ስርጭት</div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th data-i18n="thClass">የውፍረት ክፍል (ሚ.ሜ)</th>
+              <th data-i18n="thFreq">ድግግሞሽ (ብዛት)</th>
+              <th data-i18n="thPct">በመቶኛ (%)</th>
+              <th data-i18n="thCumPct">ድምር %</th>
+            </tr>
+          </thead>
+          <tbody id="freqTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 6. AUDIT TRAIL & PRODUCTION HISTORY -->
+    <div class="card" id="historySectionCard" style="border: 1px solid #6366f1;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+        <div class="card-title" style="color: #818cf8; margin: 0;" data-i18n="historyTitle">
+          📜 5. የስራዎች የታሪክ መዝገብ (Audit Trail)
+        </div>
+        <button class="btn-danger" id="btnClearHistory" style="padding: 6px 14px; font-size: 0.85rem;" onclick="clearAllHistory()" data-i18n="clearAllHistBtn">
+          🗑️ ሙሉ ታሪክ አጽዳ
+        </button>
+      </div>
+      <div class="card-subtitle" data-i18n="historySubtitle">
+        እያንዳንዱ ያሰሉት ዙር እዚህ ይመዘገባል። ይፋዊ የኦዲት ሰነድ ለማየት "📄 View Report" የሚለውን ይጫኑ!
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr style="background: #1e1b4b;">
+              <th data-i18n="thRound">ዙር #</th>
+              <th data-i18n="thTime">ቀንና ሰዓት</th>
+              <th data-i18n="thSize">ሳምፕል ብዛት</th>
+              <th>X̄ (Mean)</th>
+              <th>R (Range)</th>
+              <th>Cp</th>
+              <th>Cpk</th>
+              <th data-i18n="thStatus">ሁኔታ</th>
+              <th data-i18n="thAction">እርምጃ</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODAL: FULL OFFICIAL AUDIT REPORT -->
+  <div id="reportModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 style="font-size: 1.35rem; color: #0f172a; font-weight: 800;" data-i18n="companyName">🪵 ደብረ ብርሃን የእንጨት ማቀነባበሪያ ኃ/የተ/የግ/ማህበር</h2>
+          <div style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Quality Assurance & Control Department — Technical Audit Certificate</div>
+        </div>
+        <div class="no-print" style="display: flex; gap: 8px;">
+          <button onclick="window.print()" class="btn-report" style="padding: 8px 14px; font-weight: bold; background: #0284c7; border:none; color:white;">🖨️ Print / Save PDF</button>
+          <button onclick="closeReportModal()" class="modal-close">✖ Close</button>
+        </div>
+      </div>
+
+      <div id="modalReportContent"></div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 💻 JAVASCRIPT LOGIC WITH FULL MULTILINGUAL & TWO-SIDED ALERT ENGINE -->
+  <!-- ========================================================================= -->
+  <script>
+    // 🌐 COMPREHENSIVE MULTILINGUAL DICTIONARY (ALL 5 LANGUAGES)
+    const TRANSLATIONS = {
+      en: {
+        companyName: "🪵 Debre Birhan Wood Processing PLC",
+        titlePart1: "Web-Based Manufacturing",
+        titlePart2: "Quality Control Management",
+        titlePart3: "Information System",
+        accountTitle: "🔐 Database Security & Role-Based Authorization (RBAC)",
+        accountSubtitle: "Chapter III Data Security (Slide 25): Users are granted specific privileges. Quality Inspectors can Insert/Update data; Factory Management and Owners have Read-Only view access.",
+        googleBtn: "🌐 Continue with Google",
+        orEmail: "— or with Email —",
+        showPwd: "Show password",
+        forgotPwd: "Forgot password?",
+        signInBtn: "🔑 Sign in",
+        createAccBtn: "➕ Create account",
+        signOutBtn: "↪️ Sign out",
+        deleteAccBtn: "🗑️ Delete Account",
+        roleLabel: "🛡️ System User Role:",
+        roleInspector: "👑 Quality Inspector (Full Access & Edit)",
+        roleViewer: "👔 Factory Management / Owner (View-Only / Read-Only)",
+        syncTitle: "☁️ Cloud Database (Firebase) Status",
+        syncNowBtn: "🔄 Sync with Cloud DB",
+        clearLocalBtn: "🗑️ Clear Local Cache",
+        dbApproachDesc: "<strong>Database Approach (Slide 18):</strong> Data is stored centrally in the cloud database. Multiple users access the same single source of truth without redundancy or conflicting files.",
+        roleNoticeInspector: "👑 <strong>Quality Inspector Mode (Full Access):</strong> You have complete authorization to record, edit, and commit sample measurements to the database. (Slide 25: <code>GRANT INSERT, UPDATE TO Inspector;</code>)",
+        roleNoticeViewer: "👔 <strong>View-Only Mode (Management & Owner):</strong> Factory management and owners can monitor live charts and reports, but data modification is locked to maintain integrity. (Slide 25: <code>REVOKE UPDATE FROM Management;</code>)",
+        loadBaselineBtn: "📥 Load Factory Baseline Data",
+        clearDataBtn: "🗑️ Clear All Data",
+        sampleCountLabel: "Number of Samples to fill (1-50):",
+        sampleHint: "(Only rows with all 5 measurements completed will be calculated)",
+        thSample: "Sample #",
+        calculateBtn: "💾 Calculate & Commit to DB",
+        chartsTitle: "📊 Statistical Process Control Charts (X̄ & R Charts)",
+        limitsTitle: "🎯 Dynamic Control Limits & Process Capability",
+        lblUclX: "UCL_X̄ (Upper Limit)",
+        lblLclX: "LCL_X̄ (Lower Limit)",
+        lblUclR: "UCL_R (Range Upper)",
+        lblLclR: "LCL_R (Range Lower)",
+        lblCp: "Process Capability (Cp)",
+        lblCpk: "Actual Capability (Cpk)",
+        dbSectionTitle: "🗄️ Database Management & SQL Schema (DBMS)",
+        dbSectionSubtitle: "This section displays relational table architecture, live records, and instant database export options.",
+        downloadSqlBtn: "📥 Download Database (.sql File)",
+        exportCsvBtn: "📄 Export to CSV (.csv)",
+        dbSchemaTitle: "1. Relational Table Schema Structure:",
+        dbLiveTitle: "2. Live Database Committed Records:",
+        histTitle: "📊 3. Thickness Frequency Distribution Histogram",
+        histSubtitle: "Contiguous bars with distinct colors matching project report Page 21",
+        freqTableTitle: "📋 Table 1. Frequency Distribution of 18 mm Plywood Thickness",
+        thClass: "Thickness Class (mm)",
+        thFreq: "Frequency (Count)",
+        thPct: "Percentage (%)",
+        thCumPct: "Cumulative %",
+        historyTitle: "📜 5. Production History & Audit Trail",
+        clearAllHistBtn: "🗑️ Clear All History",
+        historySubtitle: "Each quality control round is logged here. Click any round row or '📄 View Report' to generate a formal inspection certificate!",
+        thRound: "Round #",
+        thTime: "Date & Time",
+        thSize: "Sample Size",
+        thStatus: "Status",
+        thAction: "Action",
+        viewReport: "📄 View Report",
+        deleteBtn: "🗑️ Delete",
+        // TWO-SIDED ALERTS
+        alertUcl: "🚨 <strong>OUT OF CONTROL (UCL Exceeded)!</strong> Latest mean ({val} mm) > UCL ({limit} mm). Excessive thickness caused by adhesive buildup on rollers. Execute 'Clean-Start' TPM roller cleaning immediately!",
+        alertLcl: "🚨 <strong>OUT OF CONTROL (LCL Breached)!</strong> Latest mean ({val} mm) < LCL ({limit} mm). Insufficient thickness / veneer starvation. Inspect glue spreader nozzles and hydraulic press cylinders!",
+        alertCpk: "⚠️ <strong>MANAGEMENT ADVISORY:</strong> Process Cpk ({cpk}) < 1.0 (Uncentered Process Drift). Maintain machine rollers and calibrate hydraulic press.",
+        alertInControl: "✅ Process is fully in statistical control (Both UCL & LCL satisfied)."
+      },
+      am: {
+        companyName: "🪵 ደብረ ብርሃን የእንጨት ማቀነባበሪያ ኃ/የተ/የግ/ማህበር",
+        titlePart1: "በድረ-ገጽ የተመሰረተ የማኑፋክቸሪንግ",
+        titlePart2: "የጥራት ቁጥጥር ማኔጅመንት",
+        titlePart3: "ኢንፎርሜሽን ሲስተም",
+        accountTitle: "🔐 የዳታቤዝ ደህንነት እና የተጠቃሚዎች ፈቃድ ደረጃ (RBAC)",
+        accountSubtitle: "የዳታቤዝ ደህንነት ፍልስፍና (Slide 25)፦ የጥራት ሰራተኛው አዳዲስ ዳታዎችን የማስገባትና የመቀየር ስልጣን ሲኖረው፤ የፋብሪካው አመራሮችና ባለሀብቱ ግን የማየት ብቻ ፈቃድ (Read-Only) አላቸው።",
+        googleBtn: "🌐 በ Google ይቀጥሉ",
+        orEmail: "— ወይም በ Email —",
+        showPwd: "የይለፍ ቃል አሳይ",
+        forgotPwd: "የይለፍ ቃል ረሳህ?",
+        signInBtn: "🔑 ግባ (Sign In)",
+        createAccBtn: "➕ አዲስ አካውንት ፍጠር",
+        signOutBtn: "↪️ ውጣ (Sign Out)",
+        deleteAccBtn: "🗑️ አካውንት ሰርዝ",
+        roleLabel: "🛡️ የተጠቃሚ ፈቃድ ደረጃ (System User Role):",
+        roleInspector: "👑 የጥራት መሀንዲስ / Inspector (Full Access & Edit)",
+        roleViewer: "👔 የፋብሪካ ባለሀብት / Management (View-Only / ማየት ብቻ)",
+        syncTitle: "☁️ ክላውድ ዳታቤዝ (Firebase) ሁኔታ",
+        syncNowBtn: "🔄 አሁን አመሳስል (Sync DB)",
+        clearLocalBtn: "🗑️ የብሮውዘር ዳታ አጽዳ",
+        dbApproachDesc: "<strong>Database Approach (Slide 18)፦</strong> መረጃዎች በአንድ ማዕከላዊ ክላውድ ዳታቤዝ ውስጥ ይቀመጣሉ። ብዙ ተጠቃሚዎች በአንድ ጊዜ እውነተኛውን መረጃ ያለምንም ቅራኔ ይመለከታሉ።",
+        roleNoticeInspector: "👑 <strong>የጥራት መሀንዲስ ፈቃድ (Inspector Mode):</strong> አዳዲስ የቦርድ ልኬቶችን የማስገባት፣ የማረም እና ዳታቤዝ ላይ Commit የማድረግ ሙሉ ስልጣን አለዎት። (Slide 25: <code>GRANT INSERT, UPDATE TO Inspector;</code>)",
+        roleNoticeViewer: "👔 <strong>የማየት ፈቃድ ብቻ (View-Only / Management & Owner Mode):</strong> የፋብሪካው አመራር ወይም ባለሀብቱ የምርት ጥራት ውጤቶችንና ግራፎችን ማየት ይችላሉ፤ ነገር ግን የምርት ዳታው እንዳይዛባ የመቀየር ወይም የማረም ፈቃድ የላቸውም። (Slide 25: <code>REVOKE UPDATE FROM Management;</code>)",
+        loadBaselineBtn: "📥 የፋብሪካውን መነሻ ዳታ ጫን (Baseline Data)",
+        clearDataBtn: "🗑️ ሁሉንም ዳታ አጽዳ",
+        sampleCountLabel: "የሚሞሉ የሳምፕል ብዛት (1-50):",
+        sampleHint: "(ሙሉ 5 መለኪያዎች የተሞሉባቸው ብቻ ይሰላሉ)",
+        thSample: "ሳምፕል #",
+        calculateBtn: "💾 አስላና ዳታቤዝ አድስ (Calculate & Commit)",
+        chartsTitle: "📊 የቁጥጥር ግራፎች (X̄ & R Control Charts)",
+        limitsTitle: "🎯 የቁጥጥር ወሰኖች እና የሂደት ብቃት (Limits & Capability)",
+        lblUclX: "UCL_X̄ (የላይኛው ወሰን)",
+        lblLclX: "LCL_X̄ (የታችኛው ወሰን)",
+        lblUclR: "UCL_R (የ R የላይኛው)",
+        lblLclR: "LCL_R (የ R የታችኛው)",
+        lblCp: "የሂደት ብቃት (Cp)",
+        lblCpk: "ትክክለኛ ብቃት (Cpk)",
+        dbSectionTitle: "🗄️ የዳታቤዝ ማኔጅመንት እና SQL ስኪማ (DBMS)",
+        dbSectionSubtitle: "ይህ ክፍል መረጃዎች በምን አይነት ሪሌሽናል ዳታቤዝ ሰንጠረዥ እና SQL Queries እንደተቀመጡ ያሳያል።",
+        downloadSqlBtn: "📥 ዳታቤዝ አውርድ (.sql File)",
+        exportCsvBtn: "📄 ወደ CSV ላክ (.csv)",
+        dbSchemaTitle: "1. የዳታቤዝ ሰንጠረዥ ቅርጽ (Table Schema):",
+        dbLiveTitle: "2. በአሁኑ ሰዓት በዳታቤዙ የተመዘገቡ ሪከርዶች:",
+        histTitle: "📊 3. የውፍረት ስርጭት ሂስቶግራም (Histogram)",
+        histSubtitle: "ልክ በፕሮጀክት ሪፖርቱ ገጽ 21 መሰረት አሞሌዎቹ የተያያዙና ባለ ብዙ ቀለም ሆነው የቀረቡ",
+        freqTableTitle: "📋 ሰንጠረዥ 1. የ 18 ሚ.ሜ ፕላይዉድ ውፍረት ስርጭት",
+        thClass: "የውፍረት ክፍል (ሚ.ሜ)",
+        thFreq: "ድግግሞሽ (ብዛት)",
+        thPct: "በመቶኛ (%)",
+        thCumPct: "ድምር %",
+        historyTitle: "📜 5. የስራዎች የታሪክ መዝገብ (Audit Trail)",
+        clearAllHistBtn: "🗑️ ሙሉ ታሪክ አጽዳ",
+        historySubtitle: "እያንዳንዱ ያሰሉት ዙር እዚህ ይመዘገባል። ይፋዊ የኦዲት ሰነድ ለማየት '📄 View Report' የሚለውን ይጫኑ!",
+        thRound: "ዙር #",
+        thTime: "ቀንና ሰዓት",
+        thSize: "ሳምፕል ብዛት",
+        thStatus: "ሁኔታ",
+        thAction: "እርምጃ",
+        viewReport: "📄 ሰነድ እይ",
+        deleteBtn: "🗑️ ሰርዝ",
+        // TWO-SIDED ALERTS
+        alertUcl: "🚨 <strong>ከቁጥጥር ውጪ (UCL ተጥሷል)!</strong> የቅርቡ አማካይ ({val} ሚ.ሜ) > UCL ({limit} ሚ.ሜ)። በሮለሮቹ ላይ የደረቀ ሙጫ በመከማቸቱ ከመጠን በላይ ውፍረት ተከስቷል። ወዲያውኑ የ 'Clean-Start' TPM ሮለር ጽዳት ያከናውኑ!",
+        alertLcl: "🚨 <strong>ከቁጥጥር ውጪ (LCL ተጥሷል)!</strong> የቅርቡ አማካይ ({val} ሚ.ሜ) < LCL ({limit} ሚ.ሜ)። ውፍረቱ ከሚፈለገው በታች በመሆኑ ምርቱ ሊላጥ/ሊሰነጠቅ ይችላል። የማጣበቂያ ርጭትን እና የሃይድሮሊክ ፕሬስ ጫናን ፈትሹ!",
+        alertCpk: "⚠️ <strong>ማስታወሻ ለማኔጅመንቱ፦</strong> የ Cpk መጠን ({cpk}) ከ 1.0 በታች በመሆኑ ማሽኑ በትንሹ ወደ ላይ አዘንብሏል (Uncentered Process Drift)። የሮለር ጽዳትና የሃይድሮሊክ ፕሬስ ማስተካከያ ያድርጉ።",
+        alertInControl: "✅ ሂደቱ ሙሉ በሙሉ በስታቲስቲክስ ቁጥጥር ስር ይገኛል (UCL እና LCL ተከብረዋል)።"
+      },
+      om: {
+        companyName: "🪵 Dhaabbata Qophii Mukaa Debre Birhan PLC",
+        titlePart1: "Manifekchariingii Toora Intarneetii",
+        titlePart2: "Hoggansa To'annoo Qulqullinaa",
+        titlePart3: "Sirna Odeeffannoo",
+        accountTitle: "🔐 Eegumsa Kuusaa Daataa fi Sadarkaa Hayyamaa (RBAC)",
+        accountSubtitle: "Boqonnaa III Eegumsa Daataa (Slide 25): Hojjataan qulqullinaa daataa jijjiiruu ni danda'a; bulchiinsi fi abbaan qabeenyaa garuu ilaaluu qofa danda'u.",
+        googleBtn: "🌐 Google'n Itti Fufaa",
+        orEmail: "— yookiin Imeeliin —",
+        showPwd: "Jecha icciitii argisiisi",
+        forgotPwd: "Jecha icciitii dagattee?",
+        signInBtn: "🔑 Seenaa (Sign In)",
+        createAccBtn: "➕ Akkaawuntii Haaraa",
+        signOutBtn: "↪️ Bahaa (Sign Out)",
+        deleteAccBtn: "🗑️ Akkaawuntii Haqi",
+        roleLabel: "🛡️ Sadarkaa Hayyama Fayyadamaa:",
+        roleInspector: "👑 To'ataa Qulqullinaa (Hayyama Guutuu)",
+        roleViewer: "👔 Bulchiinsa / Abbaa Qabeenyaa (Ilaaluu Qofa)",
+        syncTitle: "☁️ Haala Kuusaa Daataa Cloud (Firebase)",
+        syncNowBtn: "🔄 Amma Wal-simsiisi",
+        clearLocalBtn: "🗑️ Daataa Browser Haqi",
+        dbApproachDesc: "<strong>Adeemsa Kuusaa Daataa (Slide 18)፦</strong> Daataan wiirtuu tokko keessatti kuufama. Fayyadamtoonni hundi daataa qulqulluu wal-fakkaataa argatu.",
+        roleNoticeInspector: "👑 <strong>Haala To'ataa Qulqullinaa:</strong> Daataa haaraa galchuu fi fooyyessuuf hayyama guutuu qabdu.",
+        roleNoticeViewer: "👔 <strong>Haala Ilaaluu Qofa:</strong> Bulchiinsi daataa ilaaluu danda'a garuu jijjiiruu hin danda'u.",
+        loadBaselineBtn: "📥 Daataa Jalqabaa Fe'aa",
+        clearDataBtn: "🗑️ Daataa Hunda Haqi",
+        sampleCountLabel: "Baay'ina Saamudaa (1-50):",
+        sampleHint: "(Tarreen safartuuwwan 5 guuttate qofti shallagama)",
+        thSample: "Saamuda #",
+        calculateBtn: "💾 Shallagi & DBtti Galchi",
+        chartsTitle: "📊 Chaartii To'annoo (X̄ & R Charts)",
+        limitsTitle: "🎯 Daangaa To'annoo fi Dandeettii Adeemsaa",
+        lblUclX: "UCL_X̄ (Daangaa Ol'aanaa)",
+        lblLclX: "LCL_X̄ (Daangaa Gad'aanaa)",
+        lblUclR: "UCL_R (Range Ol'aanaa)",
+        lblLclR: "LCL_R (Range Gad'aanaa)",
+        lblCp: "Dandeettii Adeemsaa (Cp)",
+        lblCpk: "Dandeettii Dhugaa (Cpk)",
+        dbSectionTitle: "🗄️ Hoggansa Kuusaa Daataa fi Iskimaa SQL",
+        dbSectionSubtitle: "Kutaan kun gabatee kuusaa daataa fi daataa buufachuu agarsiisa.",
+        downloadSqlBtn: "📥 Kuusaa Daataa Buufadhaa (.sql)",
+        exportCsvBtn: "📄 Gara CSVtti Ergaa (.csv)",
+        dbSchemaTitle: "1. Caasaa Gabatee Kuusaa Daataa:",
+        dbLiveTitle: "2. Galmeewwan Kuusaa Daataa Keessatti Argaman:",
+        histTitle: "📊 3. Histoogiraamii Furrinaa",
+        histSubtitle: "Kutaaleen kan walitti qabamaniifi halluu adda addaa qaban",
+        freqTableTitle: "📋 Gabatee 1. Raabsa Furrinaa 18 mm",
+        thClass: "Garee Furrinaa (mm)",
+        thFreq: "Deddeebii (Baay'ina)",
+        thPct: "Dhibbeentaa (%)",
+        thCumPct: "Ida'ama %",
+        historyTitle: "📜 5. Seenaa Hojii fi Qorannoo (Audit Trail)",
+        clearAllHistBtn: "🗑️ Seenaa Hunda Haqi",
+        historySubtitle: "Hojiin shallagame hundi asitti galmaa'a. Sanada guutuu arguuf '📄 View Report' cuqpointi!",
+        thRound: "Marsaa #",
+        thTime: "Guyyaa fi Sa'aatii",
+        thSize: "Baay'ina Saamudaa",
+        thStatus: "Haala",
+        thAction: "Tarkaanfii",
+        viewReport: "📄 Sanada Ilaali",
+        deleteBtn: "🗑️ Haqi",
+        // TWO-SIDED ALERTS
+        alertUcl: "🚨 <strong>TO'ANNOO ALAA (UCL Darbeera)!</strong> Saamudni dhihoo ({val} mm) > UCL ({limit} mm). Kolfi roolarii irratti goguu irraa kan ka'e furrinni dabaleera. Hojii qulqullina 'Clean-Start' TPM roolarii hatattamaan raawwadhaa!",
+        alertLcl: "🚨 <strong>TO'ANNOO ALAA (LCL Gad-bu'eera)!</strong> Saamudni dhihoo ({val} mm) < LCL ({limit} mm). Furrinni barbaadamu gadi waan ta'eef qulqullinni miidhameera. Dhiibbaa hayidiroolikii fi kolfii sakatta'aa!",
+        alertCpk: "⚠️ <strong>GORSII BULCHIINSAA:</strong> Cpk ({cpk}) < 1.0 ta'uu isaatiin adeemsi gara oliitti jallateera. Roolarii qulqulleessaa fi hayidiroolikii sirreessaa.",
+        alertInControl: "✅ Adeemsi guutummaatti to'annoo keessa jira (UCL fi LCL eegamaniiru)."
+      },
+      ti: {
+        companyName: "🪵 ናይ ደብረ ብርሃን ዕንጨይቲ መስርሒ ው.ው.ማ",
+        titlePart1: "ብመርበብ ሓበሬታ ዝተመስረተ መፍረዪ",
+        titlePart2: "ናይ ፅሬት ምቁፅፃር ምሕደራ",
+        titlePart3: "ኢንፎርሜሽን ሲስተም",
+        accountTitle: "🔐 ድሕንነት ዳታቤዝን ደረጃ ፍቓድ ተጠቀምትን (RBAC)",
+        accountSubtitle: "ምዕራፍ III ድሕንነት ዳታ (Slide 25)፦ ሰራሕተኛ ፅሬት ዳታ ናይ ምእታውን ምቕያርን ስልጣን ኣለዎ፤ ኣመራርሓን ዋና ትካልን ግን ናይ ምርኣይ ጥራሕ ፍቓድ ኣለዎም።",
+        googleBtn: "🌐 ብ Google ቀፅሉ",
+        orEmail: "— ወይ ብኢመይል —",
+        showPwd: "ፓስወርድ ኣርኢ",
+        forgotPwd: "ፓስወርድ ረሲዕኩም?",
+        signInBtn: "🔑 እተው (Sign In)",
+        createAccBtn: "➕ ሓዱሽ ኣካውንት ፍጠር",
+        signOutBtn: "↪️ ውፃእ (Sign Out)",
+        deleteAccBtn: "🗑️ ኣካውንት ሰርዝ",
+        roleLabel: "🛡️ ደረጃ ፍቓድ ተጠቃሚ:",
+        roleInspector: "👑 መሃንዲስ ፅሬት (ሙሉእ ፍቓድ)",
+        roleViewer: "👔 ኣመራርሓ / ዋና ትካል (ምርኣይ ጥራሕ)",
+        syncTitle: "☁️ ኩነታት ክላውድ ዳታቤዝ (Firebase)",
+        syncNowBtn: "🔄 ሕዚ ኣተኣሳስር",
+        clearLocalBtn: "🗑️ ናይ ብሮውዘር ዳታ ኣፅሪ",
+        dbApproachDesc: "<strong>ናይ ዳታቤዝ ኣሰራርሓ (Slide 18)፦</strong> ዳታ ኣብ ሓደ ማእኸላይ ክላውድ ይኽዘን። ኩሎም ተጠቀምቲ ሓደ ዓይነት ሓበሬታ ይረኽቡ።",
+        roleNoticeInspector: "👑 <strong>ፍቓድ መሃንዲስ ፅሬት:</strong> ሓደሽቲ መለክዒታት ናይ ምእታውን ዳታቤዝ ናይ ምምዝጋብን ሙሉእ ስልጣን ኣለኩም።",
+        roleNoticeViewer: "👔 <strong>ናይ ምርኣይ ጥራሕ ፍቓድ:</strong> ኣመራርሓ ትካል ውፅኢት ክርእዩ ይኽእሉ፤ ዳታ ናይ ምቕያር ፍቓድ ግን የብሎምን።",
+        loadBaselineBtn: "📥 መበገሲ ዳታ ፋብሪካ ፅዓን",
+        clearDataBtn: "🗑️ ኩሉ ዳታ ኣፅሪ",
+        sampleCountLabel: "ዝምላእ ብዝሒ ሳምፕል (1-50):",
+        sampleHint: "(ሙሉእ 5 መለክዒታት ዘለዎም ጥራሕ ይሰልሑ)",
+        thSample: "ሳምፕል #",
+        calculateBtn: "💾 ሓስብ ናብ ዳታቤዝ ድማ ኣእቱ",
+        chartsTitle: "📊 ናይ ቁፅፅር ቻርታት (X̄ & R Charts)",
+        limitsTitle: "🎯 ናይ ቁፅፅር ወሰናትን ብቕዓት መስርሕን",
+        lblUclX: "UCL_X̄ (ናይ ላዕሊ ወሰን)",
+        lblLclX: "LCL_X̄ (ናይ ታሕቲ ወሰን)",
+        lblUclR: "UCL_R (ናይ R ናይ ላዕሊ)",
+        lblLclR: "LCL_R (ናይ R ናይ ታሕቲ)",
+        lblCp: "ብቕዓት መስርሕ (Cp)",
+        lblCpk: "ትክክለኛ ብቕዓት (Cpk)",
+        dbSectionTitle: "🗄️ ምሕደራ ዳታቤዝን SQL ስኪማን (DBMS)",
+        dbSectionSubtitle: "እዚ ክፍሊ ሰሌዳ ዳታቤዝን ዳታ ምውራድን የርኢ።",
+        downloadSqlBtn: "📥 ዳታቤዝ ኣውርድ (.sql)",
+        exportCsvBtn: "📄 ናብ CSV ለኣኽ (.csv)",
+        dbSchemaTitle: "1. ቅጥዒ ሰሌዳ ዳታቤዝ:",
+        dbLiveTitle: "2. ኣብ ዳታቤዝ ዝተመዝገቡ ሪከርዳት:",
+        histTitle: "📊 3. ናይ ርጉዲ ሂስቶግራም (Histogram)",
+        histSubtitle: "ልክዕ ከም ገፅ 21 ዝተተሓሓዙን ዝተፈላለየ ሕብሪ ዘለዎምን",
+        freqTableTitle: "📋 ሰሌዳ 1. ናይ 18 ሚ.ሜ ፕላይዉድ ርጉዲ ስርጭት",
+        thClass: "ክፍሊ ርጉዲ (ሚ.ሜ)",
+        thFreq: "ድግግሞሽ (ብዝሒ)",
+        thPct: "ብሚኢታዊ (%)",
+        thCumPct: "ድምር %",
+        historyTitle: "📜 5. ታሪኽ ስራሕን መዝገብ ቁፅፅርን (Audit Trail)",
+        clearAllHistBtn: "🗑️ ኩሉ ታሪኽ ኣፅሪ",
+        historySubtitle: "ዝተሰርሐ ኩሉ ኣብዚ ይምዝገብ። ሙሉእ ሰነድ ንምርኣይ '📄 View Report' ጠውቑ!",
+        thRound: "ዙር #",
+        thTime: "ዕለትን ሰዓትን",
+        thSize: "ብዝሒ ሳምፕል",
+        thStatus: "ኩነታት",
+        thAction: "ስጉምቲ",
+        viewReport: "📄 ሰነድ ርአ",
+        deleteBtn: "🗑️ ሰርዝ",
+        // TWO-SIDED ALERTS
+        alertUcl: "🚨 <strong>ካብ ቁፅፅር ወፃኢ (UCL ተጣሒሱ)!</strong> ናይ ቀረባ ማእኸል ({val} ሚ.ሜ) > UCL ({limit} ሚ.ሜ)። ኣብ ሮለራት ዝተረኸበ ደረቕ ሙጫ ርጉዲ ወሲኹ እዩ። ብቕልጡፍ ናይ 'Clean-Start' TPM ሮለር ፅሬት ግበሩ!",
+        alertLcl: "🚨 <strong>ካብ ቁፅፅር ወፃኢ (LCL ተጣሒሱ)!</strong> ናይ ቀረባ ማእኸል ({val} ሚ.ሜ) < LCL ({limit} ሚ.ሜ)። ርጉዱ ካብቲ ዝድለ ንታሕቲ ስለዝኾነ ፍርያት ክበላሾ ይኽእል እዩ። ፀቕጢ ሃይድሮሊክ ፕሬስን ሙጫን መርምሩ!",
+        alertCpk: "⚠️ <strong>ናይ ምሕደራ ማዕዳ፦</strong> መጠን Cpk ({cpk}) ካብ 1.0 ንታሕቲ ስለዝኾነ መስርሕ ዘይተማእከለ እዩ። ናይ ሮለር ፅሬትን ሃይድሮሊክ ምትዕርራይን ግበሩ።",
+        alertInControl: "✅ መስርሕ ሙሉእ ብሙሉእ ኣብ ትሕቲ ቁፅፅር ይርከብ (UCLን LCLን ተሓልዮም)።"
+      },
+      so: {
+        companyName: "🪵 Warshadda Qoryaha Debre Birhan PLC",
+        titlePart1: "Wax-soo-saarka Ku Salaysan Shabakadda",
+        titlePart2: "Maamulka Xakamaynta Tayada",
+        titlePart3: "Nidaamka Xogta",
+        accountTitle: "🔐 Amniga Xogta & Heerka Ogolaanshaha (RBAC)",
+        accountSubtitle: "Cutubka III Amniga Xogta (Slide 25): Kormeeraha tayadu wuxuu leeyahay ogolaansho buuxa; maamulka iyo milkiiluhu waxay leeyihiin daawasho keliya.",
+        googleBtn: "🌐 Ku Sii Wad Google",
+        orEmail: "— ama Iimayl —",
+        showPwd: "Muuji furaha sirta ah",
+        forgotPwd: "Ma ilowday furaha?",
+        signInBtn: "🔑 Gal (Sign In)",
+        createAccBtn: "➕ Sameyso Akoon Cusub",
+        signOutBtn: "↪️ Ka Bax (Sign Out)",
+        deleteAccBtn: "🗑️ Tirtir Akoonka",
+        roleLabel: "🛡️ Doorka Isticmaalaha:",
+        roleInspector: "👑 Kormeeraha Tayada (Ogolaansho Buuxa)",
+        roleViewer: "👔 Maamulka / Milkiilaha (Daawasho Keliya)",
+        syncTitle: "☁️ Xaaladda Xogta Cloud (Firebase)",
+        syncNowBtn: "🔄 Hadda Isku Xidh",
+        clearLocalBtn: "🗑️ Tirtir Xogta Browser-ka",
+        dbApproachDesc: "<strong>Habka Xogta (Slide 18)፦</strong> Xogta waxaa lagu keydiyaa meel dhexe oo cloud ah. Dhammaan dadku waxay helayaan hal xog oo sax ah.",
+        roleNoticeInspector: "👑 <strong>Doorka Kormeeraha:</strong> Waxaad leedahay ogolaansho buuxa oo aad ku diiwaangeliso xogta cusub.",
+        roleNoticeViewer: "👔 <strong>Doorka Daawashada Keliya:</strong> Maamulku wuxuu arki karaa shaxanka laakiin ma beddeli karo xogta.",
+        loadBaselineBtn: "📥 Soo Geli Xogta Bilowga ah",
+        clearDataBtn: "🗑️ Tirtir Dhammaan Xogta",
+        sampleCountLabel: "Tirada Tusaalooyinka (1-50):",
+        sampleHint: "(Keliya safafka leh 5-ta cabbir ayaa la xisaabin doonaa)",
+        thSample: "Tusaale #",
+        calculateBtn: "💾 Xisaabi & Ku Keydi DB",
+        chartsTitle: "📊 Jaantusyada Xakamaynta (X̄ & R Charts)",
+        limitsTitle: "🎯 Xuduudaha Xakamaynta & Awoodda Habka",
+        lblUclX: "UCL_X̄ (Xadka Sare)",
+        lblLclX: "LCL_X̄ (Xadka Hoose)",
+        lblUclR: "UCL_R (Range Sare)",
+        lblLclR: "LCL_R (Range Hoose)",
+        lblCp: "Awoodda Habka (Cp)",
+        lblCpk: "Awoodda Dhabta ah (Cpk)",
+        dbSectionTitle: "🗄️ Maamulka Xogta & Qaabka SQL (DBMS)",
+        dbSectionSubtitle: "Qaybtani waxay muujinaysaa qaab-dhismeedka xogta iyo soo dejinta.",
+        downloadSqlBtn: "📥 Soo Degso Xogta (.sql)",
+        exportCsvBtn: "📄 U Dhoofi CSV (.csv)",
+        dbSchemaTitle: "1. Qaab-dhismeedka Jadwalka Xogta:",
+        dbLiveTitle: "2. Xogta Tooska ah ee la Keydiyay:",
+        histTitle: "📊 3. Shaxda Joogteynta Dhumucda",
+        histSubtitle: "Shaxan isku xidhan oo midabbo kala duwan leh",
+        freqTableTitle: "📋 Jadwalka 1. Qaybinta Dhumucda 18 mm",
+        thClass: "Heerka Dhumucda (mm)",
+        thFreq: "Tirada Joogtada ah",
+        thPct: "Boqolkiiba (%)",
+        thCumPct: "Isku-darka %",
+        historyTitle: "📜 5. Taariikhda Wax-soo-saarka (Audit Trail)",
+        clearAllHistBtn: "🗑️ Tirtir Dhammaan Taariikhda",
+        historySubtitle: "Wareeg kasta halkan ayaa lagu keydiyaa. Riix '📄 View Report' si aad u hesho shahaadada!",
+        thRound: "Wareeg #",
+        thTime: "Taariikh & Waqti",
+        thSize: "Tirada Tusaalaha",
+        thStatus: "Xaalad",
+        thAction: "Tallaabo",
+        viewReport: "📄 Eeg Warbixinta",
+        deleteBtn: "🗑️ Tirtir",
+        // TWO-SIDED ALERTS
+        alertUcl: "🚨 <strong>KONTAROOLKA KAA BAXSAY (UCL Wuu Dhaafay)!</strong> Celceliska ugu dambeeyay ({val} mm) > UCL ({limit} mm). Xabag ku ururtay rullallada ayaa kordhisay dhumucda. Si degdeg ah u samee nadiifinta 'Clean-Start' TPM!",
+        alertLcl: "🚨 <strong>KONTAROOLKA KAA BAXSAY (LCL Wuu Ka Hooseeyaa)!</strong> Celceliska ({val} mm) < LCL ({limit} mm). Dhumucdu way ka yar tahay intii loo baahnaa. Hubi cadaadiska qalabka jaraaxada iyo xabagta!",
+        alertCpk: "⚠️ <strong>OGAYSIIS MAAMULKA:</strong> Cpk ({cpk}) < 1.0 waxay muujinaysaa in shaqadu aanay dheellitirnayn. Nadiifi rullallada oo hagaaji cadaadiska.",
+        alertInControl: "✅ Habku si buuxda ayuu u xakamaysan yahay (UCL iyo LCL labaduba waa caadi)."
+      }
+    };
+
+    let currentLang = "am";
+
+    function changeLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem("qcmis_selected_lang", lang);
+      applyLanguage(lang);
+    }
+
+    function applyLanguage(lang) {
+      const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (dict[key]) el.innerHTML = dict[key];
+      });
+      applyRolePermissions();
+      renderHistoryTable();
+      if (currentValidRows.length > 0) calculateSystem(false);
+    }
+
+    // FIREBASE CONFIGURATION
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyA1K1_MqCC9npbu5BeFS5nGcpXadUmjLHM",
+      authDomain: "debrebirhan-qc.firebaseapp.com",
+      projectId: "debrebirhan-qc",
+      storageBucket: "debrebirhan-qc.firebasestorage.app",
+      messagingSenderId: "502648517729",
+      appId: "1:502648517729:web:bf5ef0a51ac0a64932a620"
+    };
+
+    // 15 BENCHMARK SAMPLES (n=5)
+    const BASELINE = [
+      [1, 18.0, 18.1, 17.9, 18.0, 18.2],
+      [2, 17.9, 18.0, 18.0, 17.8, 18.1],
+      [3, 18.1, 18.0, 17.9, 18.1, 18.0],
+      [4, 18.0, 17.9, 18.0, 18.0, 17.9],
+      [5, 18.2, 18.1, 18.0, 18.2, 18.1],
+      [6, 17.9, 18.2, 18.1, 18.0, 18.0],
+      [7, 18.0, 17.9, 18.1, 18.0, 18.0],
+      [8, 18.1, 18.0, 17.9, 18.2, 18.0],
+      [9, 17.9, 18.1, 18.0, 17.9, 17.8],
+      [10, 18.0, 18.0, 18.1, 17.9, 18.0],
+      [11, 18.1, 17.9, 18.0, 18.1, 18.0],
+      [12, 17.9, 18.0, 18.1, 17.9, 18.0],
+      [13, 17.9, 18.2, 18.0, 17.9, 18.1],
+      [14, 18.0, 18.1, 17.9, 18.0, 18.0],
+      [15, 18.1, 18.0, 17.9, 18.1, 17.9]
+    ];
+
+    // STANDARD SPC FACTORS (MONTGOMERY - n=5)
+    const SPC_FACTORS = {
+      2: { A2: 1.880, D3: 0.000, D4: 3.267, d2: 1.128 },
+      3: { A2: 1.023, D3: 0.000, D4: 2.574, d2: 1.693 },
+      4: { A2: 0.729, D3: 0.000, D4: 2.282, d2: 2.059 },
+      5: { A2: 0.577, D3: 0.000, D4: 2.114, d2: 2.326 },
+      6: { A2: 0.483, D3: 0.000, D4: 2.004, d2: 2.534 },
+      7: { A2: 0.419, D3: 0.076, D4: 1.924, d2: 2.704 },
+      8: { A2: 0.373, D3: 0.136, D4: 1.864, d2: 2.847 },
+      9: { A2: 0.337, D3: 0.184, D4: 1.816, d2: 2.970 },
+      10: { A2: 0.308, D3: 0.223, D4: 1.777, d2: 3.078 }
+    };
+
+    let sampleData = [];
+    let currentValidRows = [];
+    let currentGrandMean = 0;
+    let currentAvgRange = 0;
+    let currentLimits = { ucl_x: 0, lcl_x: 0, ucl_r: 0, lcl_r: 0 };
+    let qcCurrentUser = null;
+    let qcFirebaseReady = false;
+    let currentRole = "inspector";
+
+    function getQCStorageKey(name) {
+      return 'qcmis_global_' + name;
+    }
+
+    function init() {
+      const savedLang = localStorage.getItem("qcmis_selected_lang") || "am";
+      currentLang = savedLang;
+      document.getElementById("langSelect").value = savedLang;
+
+      const savedRole = localStorage.getItem("qcmis_user_role") || "inspector";
+      currentRole = savedRole;
+      document.getElementById("qcUserRoleSelect").value = savedRole;
+
+      const saved = localStorage.getItem(getQCStorageKey("spc_plywood_data"));
+      if (saved) {
+        try {
+          sampleData = JSON.parse(saved);
+          document.getElementById("sampleCountInput").value = sampleData.length || 15;
+        } catch(e) { loadBaselineData(false); }
+      } else {
+        loadBaselineData(false);
+      }
+      renderInputTable();
+      calculateSystem(false);
+      renderHistoryTable();
+      applyLanguage(savedLang);
+    }
+
+    // 🛡️ ROLE-BASED ACCESS CONTROL (RBAC)
+    function setUserRole(role) {
+      currentRole = role;
+      localStorage.setItem("qcmis_user_role", role);
+      applyRolePermissions();
+    }
+
+    function applyRolePermissions() {
+      const isViewer = (currentRole === "viewer");
+      const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+
+      // 1. Lock/Unlock Inputs
+      const inputs = document.querySelectorAll("#inputTableBody input");
+      inputs.forEach(inp => { inp.disabled = isViewer; });
+
+      // 2. Lock/Unlock Buttons
+      const btnCalc = document.getElementById("btnCalculate");
+      const btnBase = document.getElementById("btnBaseline");
+      const btnClear = document.getElementById("btnClearData");
+      const btnClearHist = document.getElementById("btnClearHistory");
+      const btnClearLoc = document.getElementById("btnClearLocal");
+      const sampleCount = document.getElementById("sampleCountInput");
+
+      if (btnCalc) btnCalc.disabled = isViewer;
+      if (btnBase) btnBase.disabled = isViewer;
+      if (btnClear) btnClear.disabled = isViewer;
+      if (btnClearHist) btnClearHist.disabled = isViewer;
+      if (btnClearLoc) btnClearLoc.disabled = isViewer;
+      if (sampleCount) sampleCount.disabled = isViewer;
+
+      // 3. Update Banner Message
+      const banner = document.getElementById("roleNoticeBanner");
+      if (banner) {
+        if (isViewer) {
+          banner.className = "alert alert-warning";
+          banner.innerHTML = dict.roleNoticeViewer;
+        } else {
+          banner.className = "alert alert-info";
+          banner.innerHTML = dict.roleNoticeInspector;
+        }
+      }
+    }
+
+    function renderInputTable() {
+      const count = parseInt(document.getElementById("sampleCountInput").value) || 15;
+      const tbody = document.getElementById("inputTableBody");
+      tbody.innerHTML = "";
+
+      for (let i = 1; i <= count; i++) {
+        const rowData = sampleData.find(d => d[0] === i) || [i, "", "", "", "", ""];
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td style="font-weight: bold; background: #0f172a; color: #38bdf8;">${i}</td>
+          <td><input type="number" step="0.01" value="${rowData[1] !== undefined ? rowData[1] : ""}" id="x_${i}_1" onchange="updateCell(${i}, 1, this.value)"></td>
+          <td><input type="number" step="0.01" value="${rowData[2] !== undefined ? rowData[2] : ""}" id="x_${i}_2" onchange="updateCell(${i}, 2, this.value)"></td>
+          <td><input type="number" step="0.01" value="${rowData[3] !== undefined ? rowData[3] : ""}" id="x_${i}_3" onchange="updateCell(${i}, 3, this.value)"></td>
+          <td><input type="number" step="0.01" value="${rowData[4] !== undefined ? rowData[4] : ""}" id="x_${i}_4" onchange="updateCell(${i}, 4, this.value)"></td>
+          <td><input type="number" step="0.01" value="${rowData[5] !== undefined ? rowData[5] : ""}" id="x_${i}_5" onchange="updateCell(${i}, 5, this.value)"></td>
+        `;
+        tbody.appendChild(tr);
+      }
+      applyRolePermissions();
+    }
+
+    function updateCell(sampleNo, index, val) {
+      if (currentRole === "viewer") return;
+      let row = sampleData.find(d => d[0] === sampleNo);
+      if (!row) {
+        row = [sampleNo, "", "", "", "", ""];
+        sampleData.push(row);
+        sampleData.sort((a, b) => a[0] - b[0]);
+      }
+      row[index] = val === "" ? "" : parseFloat(val);
+      localStorage.setItem(getQCStorageKey("spc_plywood_data"), JSON.stringify(sampleData));
+    }
+
+    function changeSampleCount() { renderInputTable(); }
+
+    function loadBaselineData(notify = true) {
+      if (currentRole === "viewer") { alert("Permission Denied: Management has View-Only access."); return; }
+      sampleData = JSON.parse(JSON.stringify(BASELINE));
+      document.getElementById("sampleCountInput").value = 15;
+      localStorage.setItem(getQCStorageKey("spc_plywood_data"), JSON.stringify(sampleData));
+      renderInputTable();
+      calculateSystem(false);
+      if (notify) showAlert("✅ Baseline data loaded successfully!", "success");
+    }
+
+    function clearData() {
+      if (currentRole === "viewer") { alert("Permission Denied: Management has View-Only access."); return; }
+      sampleData = [];
+      currentValidRows = [];
+      localStorage.removeItem(getQCStorageKey("spc_plywood_data"));
+      renderInputTable();
+      document.getElementById("resultsSection").style.display = "none";
+      showAlert("🗑️ Data cleared.", "info");
+    }
+
+    function showAlert(msg, type) {
+      const box = document.getElementById("statusAlert");
+      box.className = `alert alert-${type}`;
+      box.innerHTML = msg;
+      box.style.display = "block";
+      setTimeout(() => { box.style.display = "none"; }, 4000);
+    }
+
+    // 💾 CALCULATE & COMMIT (WITH TWO-SIDED UCL/LCL CHECK)
+    function calculateSystem(showMsg = true) {
+      const validRows = [];
+      const count = parseInt(document.getElementById("sampleCountInput").value) || 15;
+
+      for (let i = 1; i <= count; i++) {
+        const x1 = parseFloat(document.getElementById(`x_${i}_1`)?.value);
+        const x2 = parseFloat(document.getElementById(`x_${i}_2`)?.value);
+        const x3 = parseFloat(document.getElementById(`x_${i}_3`)?.value);
+        const x4 = parseFloat(document.getElementById(`x_${i}_4`)?.value);
+        const x5 = parseFloat(document.getElementById(`x_${i}_5`)?.value);
+
+        if (!isNaN(x1) && !isNaN(x2) && !isNaN(x3) && !isNaN(x4) && !isNaN(x5)) {
+          const vals = [x1, x2, x3, x4, x5];
+          const total = vals.reduce((a, b) => a + b, 0);
+          const mean = total / 5;
+          const range = Math.max(...vals) - Math.min(...vals);
+          validRows.push({
+            sampleNo: i,
+            x1, x2, x3, x4, x5,
+            total: Number(total.toFixed(2)),
+            mean: Number(mean.toFixed(2)),
+            range: Number(range.toFixed(2)),
+            vals
+          });
+        }
+      }
+
+      currentValidRows = validRows;
+
+      if (validRows.length === 0) {
+        document.getElementById("resultsSection").style.display = "none";
+        if (showMsg) showAlert("⚠️ Please enter at least one full row (X1-X5).", "warning");
+        return;
+      }
+
+      document.getElementById("resultsSection").style.display = "block";
+
+      const grandMean = Number((validRows.reduce((a, b) => a + b.mean, 0) / validRows.length).toFixed(2));
+      const avgRange = Number((validRows.reduce((a, b) => a + b.range, 0) / validRows.length).toFixed(2));
+
+      currentGrandMean = grandMean;
+      currentAvgRange = avgRange;
+
+      // Factors for n=5
+      const factors = SPC_FACTORS[5];
+      const A2 = factors.A2;
+      const D4 = factors.D4;
+      const D3 = factors.D3;
+      const d2 = factors.d2;
+
+      // Control limits
+      const ucl_x = Number((grandMean + (A2 * avgRange)).toFixed(2));
+      const lcl_x = Number((grandMean - (A2 * avgRange)).toFixed(2));
+      const ucl_r = Number((D4 * avgRange).toFixed(2));
+      const lcl_r = Number((D3 * avgRange).toFixed(2));
+
+      currentLimits = { ucl_x, lcl_x, ucl_r, lcl_r };
+
+      // Capability
+      const USL = 18.30;
+      const LSL = 17.70;
+      const sigma = d2 > 0 ? (avgRange / d2) : 0.001;
+      const cp = Number(((USL - LSL) / (6 * sigma)).toFixed(2));
+      const cpk = Number(Math.min((USL - grandMean) / (3 * sigma), (grandMean - LSL) / (3 * sigma)).toFixed(3));
+
+      document.getElementById("val_ucl_x").innerText = ucl_x + " mm";
+      document.getElementById("val_lcl_x").innerText = lcl_x + " mm";
+      document.getElementById("val_ucl_r").innerText = ucl_r + " mm";
+      document.getElementById("val_lcl_r").innerText = lcl_r + " mm";
+      document.getElementById("val_cp").innerText = cp + (cp >= 1.0 ? " (Capable)" : " (Incapable)");
+      document.getElementById("val_cpk").innerText = cpk + (cpk < 1.0 ? " (Uncentered)" : " (Centered)");
+
+      // 🚨 TWO-SIDED DECISION ALERT (UCL vs LCL)
+      const alertDiv = document.getElementById("managerAlertBox");
+      const latestMean = validRows[validRows.length - 1].mean;
+      const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+
+      if (latestMean > ucl_x) {
+        // High thickness violation (Above UCL)
+        alertDiv.innerHTML = `<div class="alert alert-danger">${dict.alertUcl.replace('{val}', latestMean).replace('{limit}', ucl_x)}</div>`;
+      } else if (latestMean < lcl_x) {
+        // Low thickness violation (Below LCL)
+        alertDiv.innerHTML = `<div class="alert alert-danger">${dict.alertLcl.replace('{val}', latestMean).replace('{limit}', lcl_x)}</div>`;
+      } else if (cpk < 1.0) {
+        // Uncentered process drift
+        alertDiv.innerHTML = `<div class="alert alert-warning">${dict.alertCpk.replace('{cpk}', cpk)}</div>`;
+      } else {
+        // Fully in control
+        alertDiv.innerHTML = `<div class="alert alert-success">${dict.alertInControl}</div>`;
+      }
+
+      document.getElementById("xbarCaption").innerText = `X̄ Chart: UCL ${ucl_x} mm | Center ${grandMean} mm | LCL ${lcl_x} mm`;
+      renderLineChart("xbarChartSvg", validRows.map(r => r.mean), validRows.map(r => r.sampleNo), ucl_x, grandMean, lcl_x, "#38bdf8", "Mean (X̄)");
+
+      document.getElementById("rCaption").innerText = `R Chart: UCL ${ucl_r} mm | Center ${avgRange} mm | LCL ${lcl_r} mm`;
+      renderLineChart("rChartSvg", validRows.map(r => r.range), validRows.map(r => r.sampleNo), ucl_r, avgRange, lcl_r, "#f97316", "Range (R)");
+
+      // Live DB table update
+      const dbTbody = document.getElementById("dbLiveTableBody");
+      dbTbody.innerHTML = "";
+      validRows.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td style="font-weight:bold; color:var(--db-color);">${r.sampleNo}</td>
+          <td>${r.x1}</td><td>${r.x2}</td><td>${r.x3}</td><td>${r.x4}</td><td>${r.x5}</td>
+          <td style="font-weight:bold; color:#38bdf8;">${r.mean}</td><td style="font-weight:bold; color:#fb923c;">${r.range}</td>
+        `;
+        dbTbody.appendChild(tr);
+      });
+
+      const dbSumRow1 = document.createElement("tr");
+      dbSumRow1.style.background = "#0c4a6e";
+      dbSumRow1.style.borderTop = "2px solid #0284c7";
+      dbSumRow1.innerHTML = `
+        <td colspan="6" style="font-weight:bold; text-align:right; color:#7dd3fc; font-size:0.95rem;">Grand Mean (X̄̄ / X Double Bar):</td>
+        <td style="font-weight:bold; color:#38bdf8; font-size:1.05rem;">${grandMean} mm</td>
+        <td style="color:#64748b;">-</td>
+      `;
+      dbTbody.appendChild(dbSumRow1);
+
+      const dbSumRow2 = document.createElement("tr");
+      dbSumRow2.style.background = "#0c4a6e";
+      dbSumRow2.innerHTML = `
+        <td colspan="6" style="font-weight:bold; text-align:right; color:#7dd3fc; font-size:0.95rem;">Average Range (R̄ / R Bar):</td>
+        <td style="color:#64748b;">-</td>
+        <td style="font-weight:bold; color:#fb923c; font-size:1.05rem;">${avgRange} mm</td>
+      `;
+      dbTbody.appendChild(dbSumRow2);
+
+      const allVals = [];
+      validRows.forEach(r => allVals.push(...r.vals));
+      renderHistogramAndTable(allVals);
+
+      if (showMsg) {
+        logSessionToHistory(cp, cpk);
+        syncToFirebaseDB(validRows, grandMean, avgRange, cp, cpk);
+        showAlert(`✅ ${validRows.length} samples calculated and saved!`, "success");
+      }
+    }
+
+    function syncToFirebaseDB(rows, gm, ar, cp, cpk) {
+      if (!qcFirebaseReady || !firebase.database) return;
+      try {
+        const payload = {
+          updatedAt: new Date().toISOString(),
+          updatedBy: qcCurrentUser ? (qcCurrentUser.displayName || qcCurrentUser.email) : "Quality Inspector (Station 1)",
+          role: currentRole,
+          grandMean: gm,
+          avgRange: ar,
+          cp: cp,
+          cpk: cpk,
+          samples: rows
+        };
+        firebase.database().ref('live_production_qc').set(payload);
+      } catch(e) {}
+    }
+
+    function renderLineChart(containerId, values, labels, ucl, cl, lcl, color, title) {
+      const width = 850, height = 320;
+      const padL = 60, padR = 30, padT = 30, padB = 40;
+      const plotW = width - padL - padR;
+      const plotH = height - padT - padB;
+
+      const minV = Math.min(...values, lcl) - 0.05;
+      const maxV = Math.max(...values, ucl) + 0.05;
+
+      const getY = (val) => padT + (maxV - val) * plotH / (maxV - minV);
+      const getX = (idx) => padL + (values.length === 1 ? plotW / 2 : idx * plotW / (values.length - 1));
+
+      let points = values.map((v, i) => `${getX(i).toFixed(1)},${getY(v).toFixed(1)}`).join(" ");
+
+      let svg = `<svg viewBox="0 0 ${width} ${height}" style="width:100%;height:auto;">`;
+      svg += `<line x1="${padL}" y1="${getY(ucl)}" x2="${width - padR}" y2="${getY(ucl)}" stroke="#f59e0b" stroke-dasharray="6,4" stroke-width="2"/>`;
+      svg += `<text x="${width - padR + 5}" y="${getY(ucl) + 4}" fill="#f59e0b" font-size="11">UCL: ${ucl}</text>`;
+
+      svg += `<line x1="${padL}" y1="${getY(cl)}" x2="${width - padR}" y2="${getY(cl)}" stroke="#94a3b8" stroke-dasharray="3,3" stroke-width="1.5"/>`;
+      svg += `<text x="${width - padR + 5}" y="${getY(cl) + 4}" fill="#94a3b8" font-size="11">CL: ${cl}</text>`;
+
+      svg += `<line x1="${padL}" y1="${getY(lcl)}" x2="${width - padR}" y2="${getY(lcl)}" stroke="#ef4444" stroke-dasharray="6,4" stroke-width="2"/>`;
+      svg += `<text x="${width - padR + 5}" y="${getY(lcl) + 4}" fill="#ef4444" font-size="11">LCL: ${lcl}</text>`;
+
+      svg += `<polyline points="${points}" fill="none" stroke="${color}" stroke-width="2.5"/>`;
+      values.forEach((v, i) => {
+        svg += `<circle cx="${getX(i)}" cy="${getY(v)}" r="5" fill="${color}"><title>Sample ${labels[i]}: ${v}</title></circle>`;
+        svg += `<text x="${getX(i)}" y="${height - padB + 18}" text-anchor="middle" font-size="11" fill="#94a3b8">${labels[i]}</text>`;
+      });
+
+      svg += `</svg>`;
+      document.getElementById(containerId).innerHTML = svg;
+    }
+
+    // 📊 MULTICOLOR CONTIGUOUS HISTOGRAM (PAGE 21 STYLE)
+    function renderHistogramAndTable(vals) {
+      if (!vals.length) return;
+      const min = Math.min(...vals);
+      const max = Math.max(...vals);
+      const numBins = 5;
+      const step = (max - min) / numBins;
+
+      const bins = Array(numBins).fill(0);
+      const edges = [];
+      for (let i = 0; i <= numBins; i++) edges.push(min + i * step);
+
+      vals.forEach(v => {
+        for (let i = 0; i < numBins; i++) {
+          if (v >= edges[i] && (i === numBins - 1 ? v <= edges[i+1] : v < edges[i+1])) {
+            bins[i]++;
+            break;
+          }
+        }
+      });
+
+      const width = 850, height = 280, padL = 50, padR = 20, padT = 30, padB = 40;
+      const plotW = width - padL - padR, plotH = height - padT - padB;
+      const maxCount = Math.max(...bins, 1);
+      const barW = plotW / numBins;
+
+      const colors = ["#ef4444", "#38bdf8", "#22c55e", "#f59e0b", "#a855f7", "#ec4899"];
+
+      let svg = `<svg viewBox="0 0 ${width} ${height}" style="width:100%;height:auto;">`;
+      bins.forEach((count, i) => {
+        const barH = (count / maxCount) * plotH;
+        const x = padL + i * barW;
+        const y = padT + plotH - barH;
+        const col = colors[i % colors.length];
+
+        svg += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="${col}" stroke="#0f172a" stroke-width="1.5"/>`;
+        svg += `<text x="${x + barW / 2}" y="${y - 6}" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">${count}</text>`;
+        svg += `<text x="${x + barW / 2}" y="${height - padB + 16}" text-anchor="middle" font-size="10.5" fill="#94a3b8">${edges[i].toFixed(2)}-${edges[i+1].toFixed(2)}</text>`;
+      });
+      svg += `</svg>`;
+      document.getElementById("histogramSvg").innerHTML = svg;
+
+      const fTbody = document.getElementById("freqTableBody");
+      fTbody.innerHTML = "";
+      let cumPct = 0;
+      bins.forEach((c, i) => {
+        const pct = (c / vals.length) * 100;
+        cumPct += pct;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${edges[i].toFixed(2)} - ${edges[i+1].toFixed(2)} mm</td>
+          <td>${c}</td>
+          <td>${pct.toFixed(1)}%</td>
+          <td>${cumPct.toFixed(1)}%</td>
+        `;
+        fTbody.appendChild(tr);
+      });
+      const totTr = document.createElement("tr");
+      totTr.style.fontWeight = "bold";
+      totTr.style.background = "#082f49";
+      totTr.innerHTML = `<td>Total</td><td>${vals.length}</td><td>100.0%</td><td>100.0%</td>`;
+      fTbody.appendChild(totTr);
+    }
+
+    function downloadSQL() {
+      if (!currentValidRows || currentValidRows.length === 0) {
+        alert("No database records to download!");
+        return;
+      }
+
+      let sql = `-- ========================================================\n`;
+      sql += `-- Debre Birhan Wood Processing PLC - Quality Control DB\n`;
+      sql += `-- Database Engine: SQLite / MySQL / PostgreSQL Compatible\n`;
+      sql += `-- Grand Mean (X-Double-Bar): ${currentGrandMean} mm\n`;
+      sql += `-- Average Range (R-Bar): ${currentAvgRange} mm\n`;
+      sql += `-- Exported on: ${new Date().toLocaleString()}\n`;
+      sql += `-- ========================================================\n\n`;
+
+      sql += `CREATE TABLE IF NOT EXISTS spc_samples (\n`;
+      sql += `    subgroup_no INTEGER PRIMARY KEY,\n`;
+      sql += `    x1 REAL NOT NULL,\n`;
+      sql += `    x2 REAL NOT NULL,\n`;
+      sql += `    x3 REAL NOT NULL,\n`;
+      sql += `    x4 REAL NOT NULL,\n`;
+      sql += `    x5 REAL NOT NULL,\n`;
+      sql += `    mean_x REAL NOT NULL,\n`;
+      sql += `    range_r REAL NOT NULL\n`;
+      sql += `);\n\n`;
+
+      sql += `-- COMMITTED TRANSACTIONS\n`;
+      currentValidRows.forEach(r => {
+        sql += `INSERT INTO spc_samples (subgroup_no, x1, x2, x3, x4, x5, mean_x, range_r) VALUES (${r.sampleNo}, ${r.x1}, ${r.x2}, ${r.x3}, ${r.x4}, ${r.x5}, ${r.mean}, ${r.range});\n`;
+      });
+
+      const blob = new Blob([sql], { type: "text/sql;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "debre_birhan_qc_database.sql";
+      link.click();
+    }
+
+    function downloadCSV() {
+      if (!currentValidRows || currentValidRows.length === 0) {
+        alert("No data to export!");
+        return;
+      }
+      let csv = "subgroup_no,x1,x2,x3,x4,x5,mean_x,range_r\n";
+      currentValidRows.forEach(r => {
+        csv += `${r.sampleNo},${r.x1},${r.x2},${r.x3},${r.x4},${r.x5},${r.mean},${r.range}\n`;
+      });
+      csv += `Grand Mean (X-Double-Bar),-,-,-,-,-,${currentGrandMean},-\n`;
+      csv += `Average Range (R-Bar),-,-,-,-,-,-,${currentAvgRange}\n`;
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "plywood_samples.csv";
+      link.click();
+    }
+
+    // 📜 AUDIT TRAIL LOGGING
+    function logSessionToHistory(cp, cpk) {
+      if (!currentValidRows || currentValidRows.length === 0) return;
+
+      let history = JSON.parse(localStorage.getItem(getQCStorageKey("spc_history_logs")) || "[]");
+      const now = new Date();
+      const timestamp = now.toLocaleDateString() + " " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      let statusBadge = '<span style="color:#34d399; font-weight:bold;">✅ In-Control</span>';
+      let statusText = "In-Control (Fully Certified)";
+      const factors = SPC_FACTORS[5] || { A2: 0.577 };
+      const latestMean = currentValidRows[currentValidRows.length - 1].mean;
+      const ucl_x = currentGrandMean + (factors.A2 * currentAvgRange);
+      const lcl_x = currentGrandMean - (factors.A2 * currentAvgRange);
+
+      if (latestMean > ucl_x) {
+        statusBadge = '<span style="color:#f87171; font-weight:bold;">🚨 Out-of-Control (UCL)</span>';
+        statusText = "Out-of-Control (High Thickness / Adhesive Buildup)";
+      } else if (latestMean < lcl_x) {
+        statusBadge = '<span style="color:#f87171; font-weight:bold;">🚨 Out-of-Control (LCL)</span>';
+        statusText = "Out-of-Control (Low Thickness / Veneer Starvation)";
+      } else if (cpk < 1.0) {
+        statusBadge = '<span style="color:#fbbf24; font-weight:bold;">⚠️ Uncentered</span>';
+        statusText = "Uncentered Process (Adjust Press Alignment)";
+      }
+
+      const newEntry = {
+        id: Date.now(),
+        timestamp: timestamp,
+        sampleCount: currentValidRows.length,
+        grandMean: currentGrandMean,
+        avgRange: currentAvgRange,
+        cp: cp,
+        cpk: cpk,
+        statusBadge: statusBadge,
+        statusText: statusText,
+        ucl_x: currentLimits.ucl_x,
+        lcl_x: currentLimits.lcl_x,
+        ucl_r: currentLimits.ucl_r,
+        lcl_r: currentLimits.lcl_r,
+        inspector: qcCurrentUser ? (qcCurrentUser.displayName || qcCurrentUser.email) : "Quality Officer (Station 1)"
+      };
+
+      history.unshift(newEntry);
+      localStorage.setItem(getQCStorageKey("spc_history_logs"), JSON.stringify(history));
+      renderHistoryTable();
+
+      if (qcCurrentUser && navigator.onLine) pushCloudHistory();
+    }
+
+    function renderHistoryTable() {
+      const tbody = document.getElementById("historyTableBody");
+      if (!tbody) return;
+
+      const history = JSON.parse(localStorage.getItem(getQCStorageKey("spc_history_logs")) || "[]");
+      const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+
+      if (history.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="color:#94a3b8; padding:20px;">No audit rounds recorded yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = "";
+      history.forEach((item, index) => {
+        const roundNum = history.length - index;
+        const tr = document.createElement("tr");
+        tr.style.cursor = "pointer";
+        tr.innerHTML = `
+          <td style="font-weight:bold; color:#818cf8;" onclick="viewFullReport(${item.id})">#${roundNum}</td>
+          <td style="font-size:0.85rem; color:#94a3b8;" onclick="viewFullReport(${item.id})">${item.timestamp}</td>
+          <td onclick="viewFullReport(${item.id})">${item.sampleCount}</td>
+          <td style="font-weight:bold; color:#38bdf8;" onclick="viewFullReport(${item.id})">${item.grandMean} mm</td>
+          <td style="font-weight:bold; color:#fb923c;" onclick="viewFullReport(${item.id})">${item.avgRange} mm</td>
+          <td onclick="viewFullReport(${item.id})">${item.cp}</td>
+          <td style="font-weight:bold;" onclick="viewFullReport(${item.id})">${item.cpk}</td>
+          <td onclick="viewFullReport(${item.id})">${item.statusBadge}</td>
+          <td>
+            <button onclick="viewFullReport(${item.id})" class="btn-report">${dict.viewReport || '📄 View Report'}</button>
+            <button onclick="deleteSingleHistory(${item.id})" style="background:#450a0a; color:#fca5a5; border:1px solid #7f1d1d; padding:5px 8px; border-radius:6px; font-size:0.8rem; cursor:pointer;" ${currentRole === 'viewer' ? 'disabled' : ''}>
+              ${dict.deleteBtn || '🗑️ Delete'}
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 📄 OFFICIAL CERTIFICATE MODAL
+    window.viewFullReport = function(id) {
+      const history = JSON.parse(localStorage.getItem(getQCStorageKey("spc_history_logs")) || "[]");
+      const item = history.find(h => h.id === id);
+      if (!item) return;
+
+      const content = document.getElementById("modalReportContent");
+      content.innerHTML = `
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:15px; margin-bottom:16px;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; font-size:0.9rem;">
+            <div><strong>Audit Reference No:</strong> QC-DBU-${item.id.toString().slice(-6)}</div>
+            <div><strong>Batch / Date:</strong> ${item.timestamp}</div>
+            <div><strong>Product Line:</strong> 18 mm Plywood Board</div>
+            <div><strong>Authorized By:</strong> ${item.inspector || 'Certified Quality Officer'}</div>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.05rem; color:#0f172a; margin-top:10px; border-left:4px solid #0284c7; padding-left:8px;">1. Statistical Control Parameters (SPC Metrics)</h3>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Observed Value</th>
+              <th>Technical Limits</th>
+              <th>Compliance State</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Grand Mean (X̄̄)</strong></td>
+              <td><strong>${item.grandMean} mm</strong></td>
+              <td>UCL: ${item.ucl_x || '18.14'} mm | LCL: ${item.lcl_x || '17.88'} mm</td>
+              <td><span class="doc-badge" style="background:#dcfce7; color:#166534;">Nominal Target: 18.00 mm</span></td>
+            </tr>
+            <tr>
+              <td><strong>Average Range (R̄)</strong></td>
+              <td><strong>${item.avgRange} mm</strong></td>
+              <td>UCL: ${item.ucl_r || '0.49'} mm | LCL: 0.00 mm</td>
+              <td><span class="doc-badge" style="background:#e0f2fe; color:#0369a1;">Range In-Control</span></td>
+            </tr>
+            <tr>
+              <td><strong>Process Capability (Cp)</strong></td>
+              <td><strong>${item.cp}</strong></td>
+              <td>Threshold: ≥ 1.00</td>
+              <td>${item.cp >= 1.0 ? '<span class="doc-badge" style="background:#dcfce7; color:#166534;">Capable Process</span>' : '<span class="doc-badge" style="background:#fee2e2; color:#991b1b;">Low Capability</span>'}</td>
+            </tr>
+            <tr>
+              <td><strong>Actual Capability (Cpk)</strong></td>
+              <td><strong>${item.cpk}</strong></td>
+              <td>Threshold: ≥ 1.00</td>
+              <td>${item.cpk >= 1.0 ? '<span class="doc-badge" style="background:#dcfce7; color:#166534;">Centered Process</span>' : '<span class="doc-badge" style="background:#fef3c7; color:#854d0e;">Uncentered Drift</span>'}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 style="font-size:1.05rem; color:#0f172a; margin-top:16px; border-left:4px solid #16a34a; padding-left:8px;">2. Managerial Decision & Quality Verdict</h3>
+        <div style="background:#f1f5f9; border-left:4px solid #0f172a; padding:12px 16px; margin:10px 0; font-size:0.92rem; line-height:1.6;">
+          <strong>Final Verdict:</strong> ${item.statusText || 'Quality criteria verified.'}<br>
+          <strong>Inspection Scope:</strong> ${item.sampleCount} subgroups (${item.sampleCount * 5} individual caliper thickness readings).<br>
+          <strong>Specification Limits:</strong> USL = 18.30 mm | Nominal = 18.00 mm | LSL = 17.70 mm.
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:35px; padding-top:20px; border-top:1px dashed #cbd5e1;">
+          <div>
+            <div style="font-size:0.82rem; color:#64748b;">Debre Birhan Wood Processing QC Laboratory</div>
+            <div style="font-weight:bold; font-size:0.9rem; margin-top:4px;">Official Verification Code: DBU-QC-MIS-CERTIFIED</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="border-bottom:1px solid #0f172a; width:180px; margin-bottom:4px;"></div>
+            <div style="font-size:0.85rem; font-weight:bold;">Quality Assurance Head</div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("reportModal").style.display = "flex";
+    };
+
+    window.closeReportModal = function() {
+      document.getElementById("reportModal").style.display = "none";
+    };
+
+    window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeReportModal(); });
+    document.getElementById("reportModal").addEventListener("click", (e) => {
+      if (e.target.id === "reportModal") closeReportModal();
+    });
+
+    function deleteSingleHistory(id) {
+      if (currentRole === "viewer") { alert("Permission Denied: Management has View-Only access."); return; }
+      if (!confirm("Delete this entry?")) return;
+      let history = JSON.parse(localStorage.getItem(getQCStorageKey("spc_history_logs")) || "[]");
+      history = history.filter(item => item.id !== id);
+      localStorage.setItem(getQCStorageKey("spc_history_logs"), JSON.stringify(history));
+      renderHistoryTable();
+      if (qcCurrentUser && navigator.onLine) pushCloudHistory();
+    }
+
+    function clearAllHistory() {
+      if (currentRole === "viewer") { alert("Permission Denied: Management has View-Only access."); return; }
+      if (!confirm("Are you sure you want to clear all history?")) return;
+      localStorage.removeItem(getQCStorageKey("spc_history_logs"));
+      renderHistoryTable();
+      if (qcCurrentUser && navigator.onLine) pushCloudHistory();
+    }
+
+    // 🔐 AUTHENTICATION LOGIC (FIREBASE)
+    function qcMsg(text, type='info'){
+      const el = document.getElementById('qcAuthMessage');
+      if (!el) return;
+      el.innerHTML = '<div class="alert alert-' + type + '" style="margin:0;">' + text + '</div>';
+    }
+
+    function qcStatus(text, online){
+      const el = document.getElementById('qcAccountStatus');
+      if (!el) return;
+      el.className = 'account-status ' + (online ? 'account-online' : 'account-offline');
+      el.textContent = (online ? '🟢 ' : '🟡 ') + text;
+    }
+
+    function renderAccountUI(){
+      const out = document.getElementById('accountSignedOut');
+      const inn = document.getElementById('accountSignedIn');
+      if (!out || !inn) return;
+      if (qcCurrentUser) {
+        out.style.display = 'none';
+        inn.style.display = 'block';
+        const pill = document.getElementById('qcUserPill');
+        pill.textContent = '👤 ' + (qcCurrentUser.displayName || qcCurrentUser.email || 'User');
+      } else {
+        out.style.display = 'block';
+        inn.style.display = 'none';
+      }
+    }
+
+    async function initFirebase(){
+      try {
+        if (typeof firebase === 'undefined' || !firebase.initializeApp || !firebase.auth) {
+          throw new Error('Firebase Authentication SDK is loading.');
+        }
+
+        if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+
+        const auth = firebase.auth();
+        qcFirebaseReady = true;
+
+        try { await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); } catch(e) {}
+
+        qcStatus(navigator.onLine ? 'Cloud Database connected.' : 'Offline mode active.', navigator.onLine);
+
+        auth.onAuthStateChanged(async user => {
+          qcCurrentUser = user || null;
+          renderAccountUI();
+          init();
+
+          if (user) {
+            qcStatus(navigator.onLine ? 'Connected — ' + user.email : 'Connected (Offline mode)', navigator.onLine);
+            if (navigator.onLine) await loadCloudHistory();
+          } else {
+            qcStatus(navigator.onLine ? 'Ready — Central DB Online' : 'Offline — Local DB Ready', navigator.onLine);
+          }
+          renderHistoryTable();
+        });
+
+        if (firebase.database) {
+          firebase.database().ref('live_production_qc').on('value', snap => {
+            const data = snap.val();
+            if (data && data.samples && currentRole === 'viewer') {
+              sampleData = data.samples.map(s => [s.sampleNo, s.x1, s.x2, s.x3, s.x4, s.x5]);
+              document.getElementById("sampleCountInput").value = sampleData.length;
+              renderInputTable();
+              calculateSystem(false);
+            }
+          });
+        }
+
+      } catch(e) {
+        qcFirebaseReady = false;
+        qcStatus('Local Database active.', false);
+      }
+    }
+
+    async function qcGoogleLogin(){
+      if (!qcFirebaseReady) { qcMsg('⚠️ Firebase is loading, please wait.', 'warning'); return; }
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        await firebase.auth().signInWithPopup(provider);
+        qcMsg('✅ Google sign-in successful.', 'success');
+      } catch(e) {
+        if (e.code === 'auth/popup-blocked') qcMsg('⚠️ Browser popup was blocked. Please allow popups.', 'warning');
+        else if (e.code === 'auth/popup-closed-by-user') qcMsg('ℹ️ Login closed by user.', 'info');
+        else qcMsg('❌ Login error: ' + (e.message || e.code), 'danger');
+      }
+    }
+
+    async function qcEmailLogin(){
+      if (!qcFirebaseReady) return;
+      const email = document.getElementById('qcEmail').value.trim();
+      const password = document.getElementById('qcPassword').value;
+      if (!email || !password) { qcMsg('⚠️ Please enter email and password.', 'warning'); return; }
+      try {
+        await firebase.auth().signInWithEmailAndPassword(email, password);
+        qcMsg('✅ Email sign-in successful.', 'success');
+      } catch(e) {
+        qcMsg('❌ Login failed: ' + (e.message || e.code), 'danger');
+      }
+    }
+
+    async function qcEmailSignup(){
+      if (!qcFirebaseReady) return;
+      const email = document.getElementById('qcEmail').value.trim();
+      const password = document.getElementById('qcPassword').value;
+      if (!email || password.length < 6) { qcMsg('⚠️ Enter valid email and at least 6-character password.', 'warning'); return; }
+      try {
+        await firebase.auth().createUserWithEmailAndPassword(email, password);
+        qcMsg('✅ New account created and logged in!', 'success');
+      } catch(e) {
+        qcMsg('❌ Registration failed: ' + (e.message || e.code), 'danger');
+      }
+    }
+
+    async function qcLogout(){
+      if (!qcFirebaseReady) return;
+      try {
+        await firebase.auth().signOut();
+        qcCurrentUser = null;
+        renderAccountUI();
+        init();
+        qcMsg('✅ Signed out.', 'info');
+      } catch(e) { qcMsg('❌ Sign out failed.', 'danger'); }
+    }
+
+    async function qcForgotPassword(){
+      if (!qcFirebaseReady) return;
+      const email = document.getElementById('qcEmail').value.trim();
+      if (!email) { qcMsg('⚠️ Please enter email address first.', 'warning'); return; }
+      try {
+        await firebase.auth().sendPasswordResetEmail(email);
+        qcMsg('✅ Password reset link sent to ' + email, 'success');
+      } catch(e) { qcMsg('❌ Reset failed: ' + e.message, 'danger'); }
+    }
+
+    function qcTogglePassword(){
+      const input = document.getElementById('qcPassword');
+      const box = document.getElementById('qcShowPassword');
+      if (input && box) input.type = box.checked ? 'text' : 'password';
+    }
+
+    async function pushCloudHistory(){
+      if (!qcCurrentUser || !navigator.onLine || !firebase.database) return;
+      try {
+        const history = JSON.parse(localStorage.getItem(getQCStorageKey("spc_history_logs")) || "[]");
+        await firebase.database().ref('users/' + qcCurrentUser.uid + '/history').set(history);
+        qcStatus('Cloud sync complete.', true);
+      } catch(e) {}
+    }
+
+    async function loadCloudHistory(){
+      if (!qcCurrentUser || !navigator.onLine || !firebase.database) return;
+      try {
+        const snap = await firebase.database().ref('users/' + qcCurrentUser.uid + '/history').once('value');
+        const cloud = snap.val();
+        if (Array.isArray(cloud)) {
+          localStorage.setItem(getQCStorageKey('spc_history_logs'), JSON.stringify(cloud));
+          renderHistoryTable();
+        }
+      } catch(e) {}
+    }
+
+    function qcSyncNow(){
+      if (!navigator.onLine) { qcMsg('⚠️ Offline - Data remains saved on your local device.', 'warning'); return; }
+      pushCloudHistory();
+      qcMsg('✅ Synced with cloud successfully!', 'success');
+    }
+
+    function qcClearMyLocalData(){
+      if (currentRole === "viewer") { alert("Permission Denied: Management has View-Only access."); return; }
+      if (!confirm('Clear browser data?')) return;
+      localStorage.removeItem(getQCStorageKey('spc_plywood_data'));
+      localStorage.removeItem(getQCStorageKey('spc_history_logs'));
+      init();
+      qcMsg('🗑️ Local data cleared.', 'info');
+    }
+
+    async function qcDeleteAccount(){
+      if (!qcCurrentUser) return;
+      if (!confirm('Are you sure you want to delete this Firebase account?')) return;
+      try {
+        const uid = qcCurrentUser.uid;
+        if (firebase.database) await firebase.database().ref('users/' + uid).remove();
+        await qcCurrentUser.delete();
+        localStorage.removeItem(getQCStorageKey('spc_plywood_data'));
+        localStorage.removeItem(getQCStorageKey('spc_history_logs'));
+        qcMsg('✅ Account deleted.', 'success');
+      } catch(e) {
+        qcMsg('❌ Account deletion failed: ' + (e.message || e.code), 'danger');
+      }
+    }
+
+    window.addEventListener('online', () => {
+      qcStatus('Online — Connected to Firebase', true);
+      if (qcCurrentUser) pushCloudHistory();
+    });
+    window.addEventListener('offline', () => {
+      qcStatus('Signed in (Offline mode)', false);
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      init();
+      initFirebase();
+    });
+  </script>
+</body>
+</html>
